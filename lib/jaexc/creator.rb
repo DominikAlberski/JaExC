@@ -9,11 +9,15 @@ module JaExC
     end
 
     # @param input [Hash{Symbol => Object}] request fields, see {Request}
-    # @return [Object] the raw provider response
+    # @return [Array<Exercise>]
     # @raise [InvalidRequestError] before any provider call when the input is invalid
+    # @raise [ProviderError] when the provider call fails
+    # @raise [InvalidResponseError] when the model output breaks the expected structure
     def generate(**input)
-      prompt = PromptBuilder.call(Request.from(input))
-      @provider.generate(prompt: prompt.text, schema: prompt.schema)
+      request = Request.from(input)
+      prompt = PromptBuilder.call(request)
+      response = @provider.generate(prompt: prompt.text, schema: prompt.schema)
+      ResponseParser.call(response.content, request)
     end
   end
 end

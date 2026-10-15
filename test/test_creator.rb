@@ -3,19 +3,22 @@
 require "test_helper"
 
 class TestCreator < Minitest::Test
+  EXERCISE = { jp: "学校です。", reading: "がっこうです。", translations: { en: "It is a school.", pl: "To szkoła." },
+               target_kanji: ["学"] }.freeze
+
   def valid_input
     {
       exercise_type: :kanji_reading,
       target_kanji: ["学"],
       allowed_kanji: %w[学 校 日 本],
       level: :N5,
-      count: 5,
+      count: 1,
       translation_locales: %i[en pl]
     }
   end
 
   def setup
-    @provider = FakeProvider.new
+    @provider = FakeProvider.new(content: { exercises: [EXERCISE] }.to_json)
     @creator = JaExC::Creator.new(provider: @provider)
   end
 
@@ -37,9 +40,15 @@ class TestCreator < Minitest::Test
     assert_equal [{ prompt: prompt.text, schema: prompt.schema }], @provider.calls
   end
 
-  def test_returns_provider_response
-    response = @creator.generate(**valid_input)
+  def test_returns_parsed_exercises
+    exercises = @creator.generate(**valid_input)
 
-    assert_equal "fake-model", response.model
+    assert_equal [JaExC::Exercise.new(**EXERCISE)], exercises
+  end
+
+  def test_invalid_output_raises_invalid_response_error
+    creator = JaExC::Creator.new(provider: FakeProvider.new(content: "{not json"))
+
+    assert_raises(JaExC::InvalidResponseError) { creator.generate(**valid_input) }
   end
 end
