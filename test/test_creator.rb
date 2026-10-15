@@ -30,6 +30,13 @@ class TestCreator < Minitest::Test
     assert_equal 1, @provider.calls.size
   end
 
+  def test_sends_built_prompt_to_provider
+    @creator.generate(**valid_input)
+    prompt = JaExC::PromptBuilder.call(JaExC::Request.from(valid_input))
+
+    assert_equal [{ prompt: prompt.text, schema: prompt.schema }], @provider.calls
+  end
+
   def test_returns_provider_response
     response = @creator.generate(**valid_input)
 
