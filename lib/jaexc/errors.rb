@@ -15,4 +15,7 @@ module JaExC
       super("invalid request: #{errors.join("; ")}")
     end
   end
+
+  # Raised when the model provider fails, times out, or cannot be reached.
+  class ProviderError < Error; end
 end

@@ -98,8 +98,7 @@ provider = JaExC::Providers::RubyLLM.new(
   provider: :ollama,
   model: "<selected-open-weight-model>",
   base_url: "http://localhost:11434/v1",
-  timeout: 60,
-  max_retries: 0
+  timeout: 60
 )
 
 creator = JaExC::Creator.new(provider: provider)
@@ -181,6 +180,7 @@ Do not expose provider exceptions as the public contract.
 Do not return partial exercises as a successful result.
 The MVP performs one provider attempt per generation request.
 Set RubyLLM's `max_retries` to `0` to disable automatic transport retries.
+The adapter sets `max_retries` to `0`. The caller cannot change this value.
 The caller decides whether to retry.
 
 ## Components

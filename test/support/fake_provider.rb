@@ -2,8 +2,6 @@
 
 # Deterministic model provider for tests that records every generate call.
 class FakeProvider
-  Response = Data.define(:content, :provider, :model)
-
   attr_reader :calls
 
   def initialize(content: "{}")
@@ -13,6 +11,6 @@ class FakeProvider
 
   def generate(prompt:, schema:)
     @calls << { prompt:, schema: }
-    Response.new(content: @content, provider: :fake, model: "fake-model")
+    JaExC::ProviderResponse.new(content: @content, provider: :fake, model: "fake-model")
   end
 end
