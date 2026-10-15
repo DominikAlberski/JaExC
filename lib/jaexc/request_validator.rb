@@ -1,15 +1,13 @@
 # frozen_string_literal: true
 
 module JaExC
-  # Checks raw caller input before a Request is built or a provider is called.
-  # Collects every violation so the caller can report them all at once.
+  # Checks raw caller input against the request contract and collects every violation.
   class RequestValidator
     EXERCISE_TYPES = %i[kanji_reading].freeze
     LEVELS = %i[N5 N4 N3 N2 N1].freeze
     COUNTS = (1..10)
     LOCALES = %i[en pl].freeze
 
-    # Maps each required key to the method that checks its value.
     CHECKS = {
       exercise_type: :exercise_type_error,
       target_kanji: :target_kanji_error,
@@ -19,6 +17,9 @@ module JaExC
       translation_locales: :translation_locales_error
     }.freeze
 
+    # @param input [Hash{Symbol => Object}] raw caller input
+    # @return [Hash{Symbol => Object}] the same input when it is valid
+    # @raise [InvalidRequestError] when the input breaks the request contract
     def self.call(input)
       new(input).call
     end
@@ -45,7 +46,6 @@ module JaExC
       errors
     end
 
-    # Missing keys are reported once by key_errors, so their checks are skipped.
     def value_errors
       CHECKS.filter_map { |key, check| send(check) if @input.key?(key) }
     end
@@ -70,7 +70,6 @@ module JaExC
       "#{key} contains unsupported kanji: #{list(unsupported)}" if unsupported.any?
     end
 
-    # Runs only when target_kanji is itself valid, so one bad field reports once.
     def missing_targets_error
       return if !@input.key?(:target_kanji) || target_kanji_error
 

@@ -4,3 +4,5 @@ $LOAD_PATH.unshift File.expand_path("../lib", __dir__)
 require "jaexc"
 
 require "minitest/autorun"
+
+require_relative "support/fake_provider"
