@@ -4,15 +4,28 @@ module JaExC
   # Builds the instruction text and the request-specific JSON schema for a kanji-reading exercise.
   class PromptBuilder
     NONEMPTY_STRING = { type: "string", minLength: 1 }.freeze
-    TEMPLATE = <<~TEXT
-      Write exactly %<count>s Japanese sentences for JLPT %<level>s kanji-reading practice.
-      Each sentence must contain at least one target kanji: %<targets>s.
-      Use only these kanji in each sentence: %<allowed>s.
-      Write every other word in kana. The repetition mark 々 is allowed.
-      Give the reading of the full sentence in hiragana. Keep katakana words in katakana.
-      Translate each sentence into these locales: %<locales>s.
-      In target_kanji, list the target kanji that the sentence contains.
-    TEXT
+    TEMPLATES = {
+      kanji_reading: <<~TEXT,
+        Write exactly %<count>s Japanese sentences for JLPT %<level>s kanji-reading practice.
+        All sentences must be different.
+        Each sentence must contain at least one target kanji: %<targets>s.
+        Use only these kanji in each sentence: %<allowed>s.
+        Write every other word in kana. The repetition mark 々 is allowed.
+        Give the reading of the full sentence in hiragana. Keep katakana words in katakana.
+        Translate each sentence into these locales: %<locales>s.
+        In target_kanji, list the target kanji that the sentence contains.
+      TEXT
+      kanji_words: <<~TEXT
+        Write exactly %<count>s Japanese words for JLPT %<level>s kanji-reading practice.
+        All words must be different real dictionary words.
+        Each word must contain at least one target kanji: %<targets>s.
+        Use only these kanji in each word: %<allowed>s.
+        A word may also contain hiragana and katakana. The repetition mark 々 is allowed.
+        Give the reading of each word in hiragana. Keep katakana in katakana.
+        Translate each word into these locales: %<locales>s.
+        In target_kanji, list the target kanji that the word contains.
+      TEXT
+    }.freeze
 
     # @param request [Request] validated caller input
     # @return [Prompt]
@@ -31,8 +44,12 @@ module JaExC
     private
 
     def text
-      format(TEMPLATE, count: @request.count, level: @request.level, targets: list(@request.target_kanji),
-                       allowed: list(@request.allowed_kanji), locales: list(@request.translation_locales))
+      format(TEMPLATES.fetch(@request.exercise_type), **template_values)
+    end
+
+    def template_values
+      { count: @request.count, level: @request.level, targets: list(@request.target_kanji),
+        allowed: list(@request.allowed_kanji), locales: list(@request.translation_locales) }
     end
 
     def schema

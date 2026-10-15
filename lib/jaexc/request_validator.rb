@@ -3,7 +3,7 @@
 module JaExC
   # Checks raw caller input against the request contract and collects every violation.
   class RequestValidator
-    EXERCISE_TYPES = %i[kanji_reading].freeze
+    EXERCISE_TYPES = %i[kanji_reading kanji_words].freeze
     LEVELS = %i[N5 N4 N3 N2 N1].freeze
     COUNTS = (1..10)
     LOCALES = %i[en pl].freeze

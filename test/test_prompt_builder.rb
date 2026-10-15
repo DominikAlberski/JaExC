@@ -82,6 +82,32 @@ class TestPromptBuilder < Minitest::Test
     ["N5", "exactly 5", "学, 校", "学, 校, 日, 本", "en, pl"].each { |value| assert_includes text, value }
   end
 
+  def test_reading_text_asks_for_sentences
+    assert_includes build.text, "exactly 5 Japanese sentences"
+  end
+
+  def test_words_text_asks_for_words
+    assert_includes build(exercise_type: :kanji_words).text, "exactly 5 Japanese words"
+  end
+
+  def test_words_text_states_request_values
+    text = build(exercise_type: :kanji_words).text
+
+    ["N5", "学, 校", "学, 校, 日, 本", "en, pl", "々"].each { |value| assert_includes text, value }
+  end
+
+  def test_reading_text_asks_for_distinct_sentences
+    assert_includes build.text, "different"
+  end
+
+  def test_words_text_asks_for_distinct_words
+    assert_includes build(exercise_type: :kanji_words).text, "different"
+  end
+
+  def test_words_schema_matches_reading_schema
+    assert_equal build.schema, build(exercise_type: :kanji_words).schema
+  end
+
   def test_text_permits_repetition_mark
     assert_includes build.text, "々"
   end

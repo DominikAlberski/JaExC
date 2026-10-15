@@ -3,6 +3,8 @@
 require "test_helper"
 
 class TestRequestValidator < Minitest::Test
+  TYPE_ERROR = "exercise_type must be one of: :kanji_reading, :kanji_words"
+
   def valid_input
     {
       exercise_type: :kanji_reading,
@@ -27,12 +29,18 @@ class TestRequestValidator < Minitest::Test
     assert_equal valid_input, JaExC::RequestValidator.call(valid_input)
   end
 
+  def test_accepts_kanji_words
+    input = valid_input.merge(exercise_type: :kanji_words)
+
+    assert_equal input, JaExC::RequestValidator.call(input)
+  end
+
   def test_rejects_unsupported_exercise_type
-    assert_rejected valid_input.merge(exercise_type: :listening), "exercise_type must be one of: :kanji_reading"
+    assert_rejected valid_input.merge(exercise_type: :listening), TYPE_ERROR
   end
 
   def test_rejects_string_exercise_type
-    assert_rejected valid_input.merge(exercise_type: "kanji_reading"), "exercise_type must be one of: :kanji_reading"
+    assert_rejected valid_input.merge(exercise_type: "kanji_reading"), TYPE_ERROR
   end
 
   def test_rejects_missing_keys

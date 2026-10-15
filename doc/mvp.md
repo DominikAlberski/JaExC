@@ -40,14 +40,20 @@ CLI demo / future Rails application
       Structured Ruby result
 ```
 
-The MVP generates sentence-based kanji-reading exercises.
+The MVP generates two kanji-reading exercise types:
+
+- `:kanji_reading` generates sentences.
+- `:kanji_words` generates dictionary words.
+
 Each exercise contains Japanese text, its reading, translations, and target kanji.
-The Japanese sentence is the canonical source.
+The Japanese text is the canonical source.
 Translations are supplementary model-generated content.
 
 The caller supplies target kanji and the complete allowed-kanji set.
-Generated sentences must use only allowed kanji.
+Generated text must use only allowed kanji.
+Generated text can also contain hiragana and katakana.
 Each exercise must contain at least one requested target kanji.
+For "words from these kanji only", pass the same list as target and allowed kanji.
 
 JLPT level guides generation.
 JaExC must not claim that structural checks prove JLPT accuracy or natural Japanese.
@@ -121,7 +127,7 @@ Collect every violation and raise one invalid-request error that lists all of th
 
 | Field | MVP rule |
 |---|---|
-| `exercise_type` | Symbol. Only `:kanji_reading` is supported. |
+| `exercise_type` | Symbol. One of `:kanji_reading`, `:kanji_words`. |
 | `target_kanji` | Nonempty unique list of supported single-character kanji. |
 | `allowed_kanji` | Nonempty unique list containing every target kanji. |
 | `level` | Symbol. One of `:N5`, `:N4`, `:N3`, `:N2`, `:N1`. |
@@ -141,17 +147,18 @@ Each exercise exposes these fields:
 
 | Field | Description |
 |---|---|
-| `jp` | Nonempty Japanese sentence. |
-| `reading` | Nonempty kana reading for the sentence. |
+| `jp` | Nonempty Japanese sentence or word, by exercise type. |
+| `reading` | Nonempty kana reading for `jp`. |
 | `translations` | Nonempty text for each requested locale, keyed by locale. |
-| `target_kanji` | Requested target kanji actually present in the sentence. |
+| `target_kanji` | Requested target kanji actually present in `jp`. |
 
 Validate the response structure before constructing result objects.
 Use RubyLLM's structured-output support with an explicit exercise schema.
 Verify support against the selected Ollama model in a real inference run.
 Keep application-side validation even when the provider accepts the schema.
 Schema compliance does not prove correct readings, translations, or allowed-kanji compliance.
-Validate kanji against the actual sentence, not the model's declared list.
+Validate kanji against the actual `jp` text, not the model's declared list.
+Reject a result that contains the same `jp` text in two exercises.
 Require at least one requested target kanji per exercise.
 Reject undeclared or incorrectly declared targets and forbidden kanji.
 Do not pad missing exercises with fabricated content.
@@ -222,8 +229,8 @@ Each criterion is Pass or fail.
 3. Validate invalid requests before provider calls. Pass or fail.
 4. Generate real exercises with an open-weight model through Ollama. Pass or fail.
 5. Return exactly the requested exercise count and requested translations. Pass or fail.
-6. Reject sentences containing kanji outside the allowed set. Pass or fail.
-7. Require and verify requested target kanji in each sentence. Pass or fail.
+6. Reject generated text containing kanji outside the allowed set. Pass or fail.
+7. Require and verify requested target kanji in each exercise. Pass or fail.
 8. Return stable errors for provider and output failures. Pass or fail.
 9. Run a CLI demo through the same public API. Pass or fail.
 10. Document setup, model license, limitations, and the public interface. Pass or fail.
@@ -245,7 +252,7 @@ Test prompt construction without contacting a model.
 Test the public interface with success and failure responses.
 
 Cover malformed JSON, missing fields, empty translations, and incorrect exercise counts.
-Cover forbidden kanji, missing targets, false target declarations, and Unicode boundaries.
+Cover forbidden kanji, missing targets, false target declarations, duplicates, and Unicode boundaries.
 Cover timeouts and connection failures.
 Prove invalid input makes no provider call.
 Test the thin RubyLLM adapter separately from domain logic.
@@ -264,7 +271,7 @@ A real local inference run remains mandatory for MVP demonstration.
 - Accounts, billing, and administration.
 - PDF generation, worksheet layout, and editing screens.
 - Curriculum databases, dictionary ingestion, and textbook imports.
-- Other exercise types and additional translation locales.
+- Exercise types other than `:kanji_reading` and `:kanji_words`, and additional translation locales.
 - Additional backends beyond Ollama through the RubyLLM adapter.
 - Automatic retries, corrective generation, and streaming.
 - Fine-tuning, retrieval, agent tools, and workflow orchestration.
