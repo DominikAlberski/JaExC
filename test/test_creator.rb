@@ -51,4 +51,11 @@ class TestCreator < Minitest::Test
 
     assert_raises(JaExC::InvalidResponseError) { creator.generate(**valid_input) }
   end
+
+  def test_constraint_violation_raises_invalid_exercise_error
+    content = { exercises: [EXERCISE.merge(jp: "駅の学校です。")] }.to_json
+    creator = JaExC::Creator.new(provider: FakeProvider.new(content: content))
+
+    assert_raises(JaExC::InvalidExerciseError) { creator.generate(**valid_input) }
+  end
 end

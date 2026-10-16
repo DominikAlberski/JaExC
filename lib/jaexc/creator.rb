@@ -13,11 +13,12 @@ module JaExC
     # @raise [InvalidRequestError] before any provider call when the input is invalid
     # @raise [ProviderError] when the provider call fails
     # @raise [InvalidResponseError] when the model output breaks the expected structure
+    # @raise [InvalidExerciseError] when the exercises break the kanji, target, reading, or duplicate rules
     def generate(**input)
       request = Request.from(input)
       prompt = PromptBuilder.call(request)
       response = @provider.generate(prompt: prompt.text, schema: prompt.schema)
-      ResponseParser.call(response.content, request)
+      ExerciseValidator.call(ResponseParser.call(response.content, request), request)
     end
   end
 end

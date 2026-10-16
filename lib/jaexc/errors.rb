@@ -34,6 +34,23 @@ module JaExC
     end
   end
 
+  # Raised when parsed exercises break the kanji, target, reading, or duplicate rules of the request.
+  class InvalidExerciseError < Error
+    # @return [Array<String>] frozen list of every constraint violation
+    attr_reader :errors
+
+    # @return [Array<Exercise>] frozen list of the rejected exercises
+    attr_reader :exercises
+
+    # @param errors [Array<String>] constraint violations
+    # @param exercises [Array<Exercise>] rejected exercises
+    def initialize(errors, exercises:)
+      @errors = errors.freeze
+      @exercises = exercises.dup.freeze
+      super("invalid exercises: #{errors.join("; ")}")
+    end
+  end
+
   # Raised when the model provider fails, times out, or cannot be reached.
   class ProviderError < Error; end
 end
