@@ -1,39 +1,176 @@
-# JaExC
+# JaExC — Japanese Exercise Creator
 
-TODO: Delete this and the text below, and describe your gem
+JaExC is a Ruby gem that creates Japanese kanji-reading exercises with a local open-weight model.
+It runs inside your application through Ruby method calls.
+It does not need Rails, a database, or an HTTP service.
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/jaexc`. To experiment with that code, run `bin/console` for an interactive prompt.
+JaExC validates the structure and the characters of each exercise.
+JaExC does not prove that the Japanese is natural or that the translations are correct.
+A teacher must review the exercises before use.
 
-## Installation
+## Exercise types
 
-TODO: Replace `UPDATE_WITH_YOUR_GEM_NAME_IMMEDIATELY_AFTER_RELEASE_TO_RUBYGEMS_ORG` with your gem name right after releasing it to RubyGems.org. Please do not do it earlier due to security reasons. Alternatively, replace this section with instructions to install your gem from git if you don't plan to release to RubyGems.org.
+- `:kanji_reading` generates sentences.
+- `:kanji_words` generates dictionary words.
 
-Install the gem and add to the application's Gemfile by executing:
+Each exercise contains Japanese text, its kana reading, translations, and the target kanji in the text.
 
-```bash
-bundle add UPDATE_WITH_YOUR_GEM_NAME_IMMEDIATELY_AFTER_RELEASE_TO_RUBYGEMS_ORG
+## Setup
+
+Requirements:
+
+- Ruby 3.2 or later.
+- An [Ollama](https://ollama.com) server with an open-weight model.
+
+Add the gem from git:
+
+```ruby
+gem "jaexc", git: "https://github.com/<owner>/jaexc"
 ```
 
-If bundler is not being used to manage dependencies, install the gem by executing:
+Pull a model on the Ollama server:
 
 ```bash
-gem install UPDATE_WITH_YOUR_GEM_NAME_IMMEDIATELY_AFTER_RELEASE_TO_RUBYGEMS_ORG
+ollama pull <model>
 ```
 
-## Usage
+## Public interface
 
-TODO: Write usage instructions here
+```ruby
+require "jaexc"
+
+provider = JaExC::Providers::RubyLLM.new(
+  provider: :ollama,
+  model: "<model>",
+  base_url: "http://localhost:11434/v1",
+  timeout: 120
+)
+
+creator = JaExC::Creator.new(provider: provider)
+
+result = creator.generate(
+  exercise_type: :kanji_reading,
+  target_kanji: ["学"],
+  allowed_kanji: ["学", "校", "日", "本"],
+  level: :N5,
+  count: 5,
+  translation_locales: [:en, :pl]
+)
+
+result.provider   # => :ollama
+result.model      # => "<model>"
+result.exercises.each do |exercise|
+  exercise.jp            # => "学校に行きます。"
+  exercise.reading       # => "がっこうにいきます。"
+  exercise.translations  # => { en: "...", pl: "..." }
+  exercise.target_kanji  # => ["学"]
+end
+```
+
+### Request rules
+
+Every field is required.
+JaExC rejects missing keys and unknown keys.
+JaExC does not convert types. For example, JaExC rejects `"N5"` and accepts `:N5`.
+
+| Field | Rule |
+|---|---|
+| `exercise_type` | `:kanji_reading` or `:kanji_words`. |
+| `target_kanji` | Nonempty unique Array of supported kanji. |
+| `allowed_kanji` | Nonempty unique Array of supported kanji. It must contain every target kanji. |
+| `level` | `:N5`, `:N4`, `:N3`, `:N2`, or `:N1`. |
+| `count` | Integer from 1 to 10. |
+| `translation_locales` | Nonempty unique Array of `:en` and `:pl`. |
+
+The caller supplies `allowed_kanji` from its curriculum.
+To get words from the target kanji only, give the same list as `target_kanji` and `allowed_kanji`.
+
+### Result rules
+
+A result contains exactly `count` exercises.
+JaExC checks each exercise against the actual `jp` text, not against the model declarations:
+
+- Every kanji in `jp` is in `allowed_kanji`. JaExC does not check kana, punctuation, or Latin characters.
+- `jp` contains at least one target kanji.
+- `target_kanji` lists each target kanji in `jp` exactly once.
+- `reading` contains no kanji.
+- Two exercises do not have the same `jp` text.
+- Each requested locale has a nonempty translation.
+
+### Errors
+
+Every error is a subclass of `JaExC::Error`.
+
+| Error | Cause |
+|---|---|
+| `JaExC::InvalidRequestError` | The request breaks a request rule. JaExC does not call the provider. `#errors` lists every violation. |
+| `JaExC::ProviderError` | The provider fails, times out, or is not available. |
+| `JaExC::InvalidResponseError` | The model output is not valid JSON or has the wrong structure. `#content` holds the raw output. |
+| `JaExC::InvalidExerciseError` | An exercise breaks a result rule. `#exercises` holds the rejected exercises. |
+
+JaExC makes one provider attempt for each `generate` call.
+JaExC disables automatic retries. The caller decides if it retries.
+JaExC never returns a partial result.
+
+## CLI demo
+
+The demo uses the same public interface.
+It reads the provider settings from environment variables:
+
+| Variable | Default |
+|---|---|
+| `JAEXC_LIVE_MODEL` | Required. |
+| `JAEXC_BASE_URL` | `http://localhost:11434/v1` |
+| `JAEXC_TIMEOUT` | `120` |
+
+```bash
+export JAEXC_LIVE_MODEL=<model>
+bin/jaexc-demo --type kanji_reading --target 学 --allowed 学,校,日,本 \
+  --level N5 --count 3 --locales en,pl
+```
+
+If generation fails, the demo prints the error class and message and exits with status 1.
+
+## Model
+
+| Item | Value |
+|---|---|
+| Model | TODO: record the exact model name. |
+| Digest | TODO: record the `ollama list` digest. |
+| License | TODO: record the model license. |
+
+The live demo has not been recorded yet.
+
+## Limitations
+
+- Structural validation does not prove natural Japanese, correct readings, or correct translations.
+- JaExC does not prove JLPT level accuracy. The level only guides the model.
+- JaExC supports only CJK Unified Ideographs (U+4E00 to U+9FFF).
+  This range contains every jōyō kanji.
+- JaExC rejects CJK Extension A and later extensions in requests and in `jp`.
+- JaExC rejects CJK compatibility ideographs, because NFC normalization changes them to other code points.
+- JaExC rejects Kangxi radicals, 〆, and 〇 in `jp`. JaExC permits the iteration mark 々 in `jp`.
+- JaExC compares `jp` texts without Unicode normalization.
+- JaExC supports only the `:en` and `:pl` translation locales.
+- Local inference uses your hardware and electricity. It is not free to operate.
+- JaExC does not log prompts or model output.
 
 ## Development
 
-After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake test` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
+```bash
+bin/setup
+bundle exec rake          # Unit tests and RuboCop.
+bundle exec rake mutant   # Mutation tests for request and domain validation.
+```
 
-To install this gem onto your local machine, run `bundle exec rake install`. To release a new version, update the version number in `version.rb`, and then run `bundle exec rake release`, which will create a git tag for the version, push git commits and the created tag, and push the `.gem` file to [rubygems.org](https://rubygems.org).
+The default tests use a fake provider. They do not need a model or network access.
 
-## Contributing
+To run the opt-in live test against a local Ollama model:
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/[USERNAME]/jaexc. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [code of conduct](https://github.com/[USERNAME]/jaexc/blob/main/CODE_OF_CONDUCT.md).
+```bash
+JAEXC_LIVE_MODEL=<model> bundle exec ruby -Ilib -Itest test/live/test_live_generation.rb
+```
 
-## Code of Conduct
+## License
 
-Everyone interacting in the JaExC project's codebases, issue trackers, chat rooms and mailing lists is expected to follow the [code of conduct](https://github.com/[USERNAME]/jaexc/blob/main/CODE_OF_CONDUCT.md).
+JaExC is available under the [MIT License](LICENSE).

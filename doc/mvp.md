@@ -160,6 +160,9 @@ Validate kanji against the actual `jp` text, not the model's declared list.
 Reject a result that contains the same `jp` text in two exercises.
 Require at least one requested target kanji per exercise.
 Reject undeclared or incorrectly declared targets and forbidden kanji.
+Detect kanji in `jp` with the Unicode `Han` and `Ideographic` properties.
+Reject a detected character outside the supported kanji range, except the iteration mark 々.
+Reject every `Han` or `Ideographic` character in `reading`, including 々.
 Do not pad missing exercises with fabricated content.
 
 Include the provider and model identifiers in result metadata.
@@ -206,13 +209,13 @@ JaExC/
   doc/
     mvp.md
   README.md                 # Setup, public API, limitations, demo instructions.
-  LICENSE                   # Add after the owner selects a license.
+  LICENSE                   # MIT, selected by the owner.
   Gemfile
   jaexc.gemspec
   lib/
     jaexc.rb
     jaexc/
-  spec/
+  test/
   bin/
     jaexc-demo
 ```
@@ -313,7 +316,7 @@ Explain which open model powers the project and why that choice matters.
 Writing quality has the highest judging weight.
 
 Select a source license before public release.
-This specification does not select one.
+The owner selected the MIT License.
 Record real generation failures for the write-up instead of inventing examples.
 
 Sources:

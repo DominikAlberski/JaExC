@@ -9,7 +9,8 @@ Gem::Specification.new do |spec|
   spec.email = ["dominik.alberski@gmail.com"]
 
   spec.summary = "Japanese exercise creator backed by a local open-weight model."
-  spec.description = "Generates validated sentence-based kanji-reading exercises through an in-process Ruby API."
+  spec.description = "Generates validated kanji-reading sentence and word exercises through an in-process Ruby API."
+  spec.license = "MIT"
   spec.required_ruby_version = ">= 3.2.0"
 
   # Uncomment the line below to require MFA for gem pushes.
