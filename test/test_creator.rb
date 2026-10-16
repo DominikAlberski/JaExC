@@ -40,10 +40,11 @@ class TestCreator < Minitest::Test
     assert_equal [{ prompt: prompt.text, schema: prompt.schema }], @provider.calls
   end
 
-  def test_returns_parsed_exercises
-    exercises = @creator.generate(**valid_input)
+  def test_returns_result_with_exercises_and_model_metadata
+    result = @creator.generate(**valid_input)
 
-    assert_equal [JaExC::Exercise.new(**EXERCISE)], exercises
+    assert_equal JaExC::Result.new(exercises: [JaExC::Exercise.new(**EXERCISE)], provider: :fake, model: "fake-model"),
+                 result
   end
 
   def test_invalid_output_raises_invalid_response_error
