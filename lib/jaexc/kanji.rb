@@ -8,12 +8,12 @@ module JaExC
   # compatibility ideographs, because NFC normalization changes compatibility
   # ideographs to different code points.
   module Kanji
-    RANGES = [0x4E00..0x9FFF].freeze
+    RANGE = (0x4E00..0x9FFF)
 
     # @param char [Object] candidate character
-    # @return [Boolean] true when char is one character inside {RANGES}
+    # @return [Boolean] true when char is one character inside {RANGE}
     def self.supported?(char)
-      char.is_a?(String) && char.length == 1 && RANGES.any? { |range| range.cover?(char.ord) }
+      char.is_a?(String) && char.length == 1 && RANGE.cover?(char.ord)
     end
   end
 end

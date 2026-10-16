@@ -47,11 +47,13 @@ module JaExC
     end
 
     def value_errors
-      CHECKS.filter_map { |key, check| send(check) if @input.key?(key) }
+      CHECKS.filter_map { |key, check| __send__(check) if @input.key?(key) }
     end
 
     def exercise_type_error
-      "exercise_type must be one of: #{list(EXERCISE_TYPES)}" unless EXERCISE_TYPES.include?(@input[:exercise_type])
+      return if EXERCISE_TYPES.include?(@input.fetch(:exercise_type))
+
+      "exercise_type must be one of: #{list(EXERCISE_TYPES)}"
     end
 
     def target_kanji_error
@@ -71,25 +73,25 @@ module JaExC
     end
 
     def missing_targets_error
-      return if !@input.key?(:target_kanji) || target_kanji_error
+      return if target_kanji_error
 
-      missing = @input[:target_kanji] - @input[:allowed_kanji]
+      missing = @input.fetch(:target_kanji) - @input.fetch(:allowed_kanji)
       "allowed_kanji must include every target_kanji, missing: #{list(missing)}" if missing.any?
     end
 
     def level_error
-      "level must be one of: #{list(LEVELS)}" unless LEVELS.include?(@input[:level])
+      "level must be one of: #{list(LEVELS)}" unless LEVELS.include?(@input.fetch(:level))
     end
 
     def count_error
-      count = @input[:count]
-      return if count.is_a?(Integer) && COUNTS.cover?(count)
+      count = @input.fetch(:count)
+      return if count.instance_of?(Integer) && COUNTS.cover?(count)
 
-      "count must be an Integer from #{COUNTS.min} to #{COUNTS.max}"
+      "count must be an Integer from #{COUNTS.first} to #{COUNTS.last}"
     end
 
     def translation_locales_error
-      locales = @input[:translation_locales]
+      locales = @input.fetch(:translation_locales)
       return if unique_nonempty_array?(locales) && (locales - LOCALES).empty?
 
       "translation_locales must be a nonempty unique Array of: #{list(LOCALES)}"

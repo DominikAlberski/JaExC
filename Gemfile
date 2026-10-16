@@ -13,3 +13,5 @@ gem "minitest", "~> 5.16"
 gem "rubocop", "~> 1.21"
 
 gem "webmock", "~> 3.25"
+
+gem "mutant-minitest", "~> 0.17"

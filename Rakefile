@@ -10,3 +10,8 @@ require "rubocop/rake_task"
 RuboCop::RakeTask.new
 
 task default: %i[test rubocop]
+
+desc "Run mutation testing for request and domain-validation rules"
+task :mutant do
+  sh "bundle exec mutant run"
+end

@@ -3,6 +3,8 @@
 require "test_helper"
 
 class TestRequest < Minitest::Test
+  cover "JaExC::Request*"
+
   def valid_input
     {
       exercise_type: :kanji_reading,

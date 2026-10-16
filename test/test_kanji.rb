@@ -3,6 +3,8 @@
 require "test_helper"
 
 class TestKanji < Minitest::Test
+  cover "JaExC::Kanji*"
+
   def test_accepts_common_kanji
     %w[学 校 日 本 人].each { |char| assert JaExC::Kanji.supported?(char), char }
   end
@@ -10,6 +12,10 @@ class TestKanji < Minitest::Test
   def test_accepts_range_boundaries
     assert JaExC::Kanji.supported?("一")
     assert JaExC::Kanji.supported?("鿿")
+  end
+
+  def test_accepts_string_subclass
+    assert JaExC::Kanji.supported?(Class.new(String).new("学"))
   end
 
   def test_rejects_characters_just_outside_the_range

@@ -1,0 +1,26 @@
+---
+usage: opensource
+requires:
+  - jaexc
+  - ./test/test_cli.rb
+  - ./test/test_creator.rb
+  - ./test/test_exercise_validator.rb
+  - ./test/test_helper.rb
+  - ./test/test_jaexc.rb
+  - ./test/test_kanji.rb
+  - ./test/test_prompt_builder.rb
+  - ./test/test_request.rb
+  - ./test/test_request_validator.rb
+  - ./test/test_response_parser.rb
+  - ./test/test_ruby_llm_provider.rb
+includes:
+  - lib
+  - test
+integration:
+  name: minitest
+matcher:
+  subjects:
+    - JaExC::Kanji*
+    - JaExC::Request*
+    - JaExC::RequestValidator*
+    - JaExC::ExerciseValidator*

@@ -3,10 +3,12 @@
 require "test_helper"
 
 class TestExerciseValidator < Minitest::Test
+  cover "JaExC::ExerciseValidator*"
+
   DECLARATION_ERROR = "target_kanji must list each target kanji in jp exactly once"
 
   def request
-    JaExC::Request.from(exercise_type: :kanji_reading, target_kanji: %w[学 本], allowed_kanji: %w[学 校 日 本],
+    JaExC::Request.from(exercise_type: :kanji_reading, target_kanji: %w[本 学], allowed_kanji: %w[学 校 日 本],
                         level: :N5, count: 2, translation_locales: %i[en])
   end
 
