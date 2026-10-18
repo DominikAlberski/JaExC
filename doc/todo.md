@@ -2,7 +2,7 @@
 
 ## 1. Dictionary reading check (warning)
 
-Status: agreed idea. Design and implementation start on 2026-10-18.
+Status: design decided on 2026-10-18. Sudachi is installed. Implementation is not started.
 
 ### Goal
 
@@ -32,44 +32,59 @@ An analyzer selects one reading from context.
 If the analyzer selects a different correct reading, a rejection removes a good exercise.
 A warning keeps the exercise and tells the teacher to check the reading.
 
-### Proposed design
+### Owner decisions (2026-10-18)
 
-- Add an analyzer port with one method. Example: `reading(text) -> String`.
-- Add an analyzer adapter over a real morphological analyzer.
+| Question | Decision |
+|---|---|
+| Analyzer and dictionary | Sudachi CLI (`sudachi.rs` v0.7.0) with SudachiDict core. |
+| Required or optional | Optional. Without an analyzer, `Creator` behaves as today. |
+| Analyzer missing or broken | Fail fast. The adapter constructor checks the binary and the dictionary and analyzes one test sentence. |
+| Warning location | `Result#warnings`. `Exercise` keeps only generated content. |
+| Warning format | `ReadingWarning = Data.define(:jp, :model_reading, :analyzer_reading)`. |
+| Analyzer cannot read a word | `ReadingWarning` with `analyzer_reading: nil`. It means "not verified". |
+| Configuration | `Analyzers::SudachiCli.new(dictionary:, command: "sudachi")`, passed as `Creator.new(provider:, analyzer:)`. |
+| CLI demo | Opt-in flag `--check-readings`. Dictionary path from `JAEXC_SUDACHI_DICT`. |
+| Local tools | mise. `mise.toml` pins Sudachi. `mise run sudachi:dict` downloads the dictionary. |
+| Error class | `JaExC::AnalyzerError < JaExC::Error` for a missing or broken analyzer. |
+
+Reasons are in `doc/blog-notes.md`, "Choosing a dictionary for the reading check".
+MeCab and IPAdic are frozen (2013 and 2007). Free web APIs send text off the machine.
+
+### Design
+
+- Analyzer port with one method: `reading(text) -> String or nil`.
+  `nil` means the analyzer cannot read the text.
+- Adapter `Analyzers::SudachiCli` runs the CLI through `Open3`.
+  The name keeps room for a later adapter over a Ruby binding of `sudachi.rs`.
 - Use a fake analyzer in default tests. Keep default tests deterministic.
+- Keep a live Sudachi test opt-in, like the live Ollama test.
+- Use column 5 of `sudachi -a` (reading form, katakana).
+  It is the written reading: は gives ハ, を gives ヲ, へ gives ヘ. The model writes the same kana.
 - Normalize both readings before the comparison:
-  - Convert katakana to hiragana.
+  - Convert katakana to hiragana. Keep ー.
   - Remove punctuation.
-- Use the written reading field of the analyzer, not the pronunciation field.
-  The particle は has the written reading は and the pronunciation わ.
-  The model writes は, so the written reading matches.
+- If the analyzer reading still contains a kanji after normalization, the analyzer did not know the word.
+  Return `nil` for that text.
+- One process can analyze many lines. The CLI writes `EOS` after each line.
 - Keep the warning separate from generated content.
   `doc/mvp.md` says: "Keep generated content separate from verified validation metadata."
 
-### Analyzer candidates
+### Facts from the probe (2026-10-18)
 
-Verify each candidate before the decision.
-
-| Candidate | Notes to verify |
-|---|---|
-| MeCab + `natto` gem | `natto` is a Ruby FFI binding. It needs the MeCab library and a dictionary (IPAdic or UniDic). |
-| Sudachi | Check for a maintained Ruby binding. If no binding exists, check the CLI as a subprocess. |
-
-The analyzer is a new runtime dependency. The owner must approve it.
-
-### Open design questions for the owner
-
-1. Which analyzer and which dictionary?
-2. Where does the warning go: on `Exercise`, or in a separate validation object on `Result`?
-3. What is the warning format: a Symbol, a String message, or an object with both readings?
-4. Is the analyzer required, or optional? If optional, what happens when the analyzer is not installed?
-5. Does the CLI demo print the warnings?
+- 何 always gives ナン in the core dictionary. A correct なにを also gets a warning.
+- 一日 gives イチニチ. ついたち is also correct.
+- 3人 gives サンニン. Digits get a reading.
+- An unknown kanji gives the kanji itself as the reading (㷔 → 㷔).
+- A missing dictionary makes the CLI panic with exit status 101.
+- 3 process starts took 0.088 s in total.
 
 ### Done when
 
 - The four fixture exercises get a warning.
-- The correct exercises from `doc/blog-notes.md` get no warning.
-- A live run with Gemma shows the warnings on real output.
+- The correct exercises from `doc/blog-notes.md` get no warning, except for known analyzer limits such as 何.
+- An unknown word gives a warning with `analyzer_reading: nil`.
+- A missing binary or dictionary raises an error when the adapter is constructed.
+- A live run with Gemma and Sudachi shows the warnings on real output.
 - `README.md` and `doc/mvp.md` describe the warning and its limits.
 
 ## 2. Fine-tuning exercise (owner training)

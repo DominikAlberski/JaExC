@@ -310,6 +310,63 @@ Problems:
   The small allowed set forces 見 onto any available noun.
 - 何を食べますか occurs twice with a different time word.
 
+## Choosing a dictionary for the reading check (2026-10-18)
+
+Structural rules cannot see a wrong reading such as おちゃ for 茶.
+A morphological analyzer can give a second reading to compare.
+
+Free web APIs checked first:
+
+| Option | Fit | Status on 2026-10-18 |
+|---|---|---|
+| Yahoo! JAPAN Text Analysis (furigana V2) | Sentence in, reading out | Active (new features 2026-09). Needs an app ID. Text leaves the machine. V1 was shut down in 2022. |
+| Jisho.org | Word lookup only; needs a tokenizer first | No official API. Wrappers: last release 2020. |
+| Jotoba | Word lookup, sentence breakdown | Last push 2024-01. |
+| kanjiapi.dev | Single kanji only | Cannot select 人 = ひと or にん from context. |
+
+Local analyzers checked next:
+
+| Option | Status on 2026-10-18 |
+|---|---|
+| MeCab 0.996 | Last release 2013. Still packaged, but frozen. |
+| IPAdic (MeCab dictionary) | Frozen since 2007-08. No newer words. |
+| `natto` gem (MeCab binding) | Last push 2020-03. |
+| Sudachi (`sudachi.rs`) | v0.7.0 released 2026-09-24. Active. |
+| SudachiDict | v20261015 released 2026-10-15. Updates every few months. |
+
+Decision: Sudachi CLI, optional analyzer, fail fast if the caller asks for it and it is missing.
+Reason: the only local option that is still maintained. JaExC stays local-first.
+A Ruby gem around `sudachi.rs` can become a second adapter later.
+
+Install notes:
+
+- Sudachi is not on crates.io and not in Homebrew. The GitHub release has no binaries.
+- mise installs it from the git tag. The repo has two binaries, so mise needs `crate=sudachi-cli`:
+  `mise install 'cargo:https://github.com/WorksApplications/sudachi.rs[crate=sudachi-cli]@tag:v0.7.0'` (22.7 s build).
+- The binary contains no dictionary ("bake dictionary" is not implemented upstream).
+  The core dictionary `system_core.dic` is 192.9 MB. A deploy ships two artifacts.
+- A missing dictionary makes the CLI panic with exit status 101.
+- 3 process starts with the core dictionary took 0.088 s in total. One process can read many lines (one `EOS` per line).
+
+Probe of the reading field (`-a`, column 5, katakana):
+
+| Input | Sudachi reading | Note |
+|---|---|---|
+| 茶を飲みます | チャヲノミマス | Fixture: model wrote おちゃ, so a warning |
+| 友と食べます | トモトタベマス | Fixture: model wrote ともだち, so a warning |
+| 毎日食べます | マイニチタベマス | Fixture: model added は, so a warning |
+| 人は何を飲む | ヒトハ**ナン**ヲノム | Analyzer is wrong too: correct is なにを |
+| 何が好き | **ナン**ガスキ | 何 is always ナン in the core dictionary |
+| 東京へ行きます | トウキョウヘイキマス | Written form: は→ハ, を→ヲ, へ→ヘ |
+| 3人で行く | サンニンデイク | Digits get a reading |
+| 一日 | イチニチ | ついたち is also correct |
+| 「はい」と言った。 | 「ハイ」トイッタ。 | Punctuation stays; remove before comparison |
+| 㷔を見る | 㷔ヲミル | Unknown kanji: the reading is the kanji itself |
+
+Lesson: the analyzer is a second opinion, not the truth.
+何 shows it: Sudachi says ナン where なに is correct, so a correct model reading also gets a warning.
+This is the evidence for "warning, not rejection".
+
 ## Wrong answers and what we tuned
 
 

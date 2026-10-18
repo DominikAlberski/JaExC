@@ -184,6 +184,7 @@ Expose stable library errors for these failure categories:
 - Provider connection failure or timeout.
 - Invalid response JSON or structure, including output truncated at the token limit.
 - Exercise constraint violation.
+- Reading analyzer missing or broken. This applies only when the caller passes `analyzer:`.
 
 Do not expose provider exceptions as the public contract.
 Do not return partial exercises as a successful result.
@@ -191,6 +192,39 @@ The MVP performs one provider attempt per generation request.
 Set RubyLLM's `max_retries` to `0` to disable automatic transport retries.
 The adapter sets `max_retries` to `0`. The caller cannot change this value.
 The caller decides whether to retry.
+
+### Reading check contract
+
+Status: decided on 2026-10-18. Not implemented yet.
+
+The reading check is optional.
+It compares the model `reading` with the reading from a morphological analyzer.
+A difference gives a warning. It does not reject the exercise.
+An analyzer selects one reading from context, and other readings can also be correct.
+
+```ruby
+analyzer = JaExC::Analyzers::SudachiCli.new(
+  dictionary: "~/.local/share/sudachi/system_core.dic",
+  command: "sudachi"
+)
+
+creator = JaExC::Creator.new(provider: provider, analyzer: analyzer)
+result = creator.generate(**request)
+result.warnings # => [JaExC::ReadingWarning, ...]
+```
+
+- Without `analyzer:`, `Creator` does not check readings, and `Result#warnings` is empty.
+- The analyzer port has one method: `reading(text)`. It returns kana, or `nil` if the analyzer cannot read the text.
+- The first adapter runs the Sudachi CLI (`sudachi.rs`) with the SudachiDict core dictionary.
+- The adapter constructor checks the binary and the dictionary and analyzes one test sentence.
+  If the check fails, it raises `JaExC::AnalyzerError`. A caller that asks for the check does not get a silent skip.
+- `ReadingWarning` has the fields `jp`, `model_reading`, and `analyzer_reading`.
+  `analyzer_reading` is `nil` if the analyzer cannot read a word in `jp`.
+- Warnings are validation metadata on `Result`. `Exercise` keeps only generated content.
+- Before the comparison, convert katakana to hiragana and remove punctuation in both readings.
+- A warning does not prove an error. The analyzer can be wrong. Example: Sudachi reads 何を as なんを.
+- Default tests use a fake analyzer. A live Sudachi test is opt-in.
+- The CLI demo checks readings only with `--check-readings`. It reads the dictionary path from `JAEXC_SUDACHI_DICT`.
 
 ## Components
 
@@ -203,6 +237,7 @@ The caller decides whether to retry.
 | Response parser | Parse and validate the output shape. |
 | Domain validator | Enforce target and allowed-kanji constraints. |
 | Result objects | Expose validated exercises and metadata. |
+| Reading analyzer (optional) | Give a second reading of `jp`. Readings that differ become warnings. |
 | CLI demo | Exercise the same public API without Rails. |
 
 Keep persistence, rendering, and business ownership outside these components.
