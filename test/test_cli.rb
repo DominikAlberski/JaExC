@@ -14,9 +14,17 @@ class TestCLI < Minitest::Test
     @err = StringIO.new
   end
 
-  def run_cli(argv, content: { exercises: [EXERCISE] }.to_json)
+  def run_cli(argv, content: { exercises: [EXERCISE] }.to_json, analyzer: nil)
     @provider = FakeProvider.new(content: content)
-    JaExC::CLI.new(out: @out, err: @err, provider: @provider).run(argv)
+    JaExC::CLI.new(out: @out, err: @err, provider: @provider, analyzer: analyzer).run(argv)
+  end
+
+  def with_env(name, value)
+    previous = ENV.fetch(name, nil)
+    ENV[name] = value
+    yield
+  ensure
+    ENV[name] = previous
   end
 
   def test_sends_parsed_flags_as_request
@@ -52,6 +60,46 @@ class TestCLI < Minitest::Test
   def test_missing_flag_is_reported_as_invalid_request
     assert_equal 1, run_cli(%w[--type kanji_reading])
     assert_match(/missing/, @err.string)
+  end
+
+  def test_check_readings_prints_reading_differences
+    assert_equal 0, run_cli(ARGV_OK + %w[--check-readings], analyzer: FakeAnalyzer.new("学校です。" => "ガッコウ"))
+    assert_includes @out.string, "reading check (Sudachi): 1 difference(s); a difference is not proof of an error"
+    assert_includes @out.string, "- 学校です。: model がっこうです。, analyzer ガッコウ"
+  end
+
+  def test_check_readings_prints_unreadable_text
+    run_cli(ARGV_OK + %w[--check-readings], analyzer: FakeAnalyzer.new({}))
+
+    assert_includes @out.string, "- 学校です。: model がっこうです。, analyzer cannot read"
+  end
+
+  def test_check_readings_prints_zero_differences
+    run_cli(ARGV_OK + %w[--check-readings], analyzer: FakeAnalyzer.new("学校です。" => "ガッコウデス。"))
+
+    assert_includes @out.string, "reading check (Sudachi): 0 difference(s)"
+  end
+
+  def test_without_flag_readings_are_not_checked
+    run_cli(ARGV_OK, analyzer: FakeAnalyzer.new("学校です。" => "ガッコウ"))
+
+    refute_includes @out.string, "reading check"
+  end
+
+  def test_check_readings_without_dictionary_env_fails_before_provider_call
+    with_env("JAEXC_SUDACHI_DICT", nil) do
+      assert_equal 1, run_cli(ARGV_OK + %w[--check-readings])
+    end
+    assert_match(/JAEXC_SUDACHI_DICT/, @err.string)
+    assert_empty @provider.calls
+  end
+
+  def test_check_readings_with_missing_dictionary_fails_before_provider_call
+    with_env("JAEXC_SUDACHI_DICT", "/no/such/system.dic") do
+      assert_equal 1, run_cli(ARGV_OK + %w[--check-readings])
+    end
+    assert_includes @err.string, "JaExC::AnalyzerError: sudachi dictionary not found: /no/such/system.dic"
+    assert_empty @provider.calls
   end
 
   def test_unknown_flag_prints_usage_error

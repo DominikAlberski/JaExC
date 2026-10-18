@@ -2,7 +2,7 @@
 
 ## 1. Dictionary reading check (warning)
 
-Status: design decided on 2026-10-18. Sudachi is installed. Implementation is not started.
+Status: implemented on 2026-10-18 (library, adapter, CLI flag, README). Open: live run with Gemma and Sudachi.
 
 ### Goal
 

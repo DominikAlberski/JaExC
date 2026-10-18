@@ -34,6 +34,15 @@ Pull a model on the Ollama server:
 ollama pull <model>
 ```
 
+Optional, for the reading check: install the [Sudachi](https://github.com/WorksApplications/sudachi.rs) CLI
+and a Sudachi system dictionary.
+The repository pins Sudachi in `mise.toml`:
+
+```bash
+mise install            # Builds sudachi-cli v0.7.0 with cargo.
+mise run sudachi:dict   # Downloads SudachiDict core to ~/.local/share/sudachi.
+```
+
 ## Public interface
 
 ```ruby
@@ -72,6 +81,32 @@ end
 With thinking on, Gemma 4 26B-A4B filled the 16384-token context with reasoning in 8 of 10 test calls
 and returned empty or truncated content.
 Set `thinking: true` to keep the model default.
+
+### Reading check (optional)
+
+Give `Creator` an analyzer to compare each model reading with a dictionary reading of `jp`:
+
+```ruby
+analyzer = JaExC::Analyzers::SudachiCli.new(
+  dictionary: File.expand_path("~/.local/share/sudachi/system_core.dic"),
+  command: "sudachi"
+)
+
+creator = JaExC::Creator.new(provider: provider, analyzer: analyzer)
+result = creator.generate(...)
+
+result.warnings.each do |warning|
+  warning.jp                # => "茶を飲みます"
+  warning.model_reading     # => "おちゃをのみます"
+  warning.analyzer_reading  # => "チャヲノミマス"
+end
+```
+
+- A difference gives a `JaExC::ReadingWarning`. It does not reject the exercise.
+- `analyzer_reading` is `nil` when Sudachi does not know a word in `jp`. The model reading is then not verified.
+- Before the comparison, JaExC changes katakana to hiragana and removes punctuation.
+- Without an analyzer, `result.warnings` is empty.
+- The constructor checks the command and the dictionary. If a check fails, it raises `JaExC::AnalyzerError`.
 
 ### Request rules
 
@@ -115,6 +150,7 @@ Every error is a subclass of `JaExC::Error`.
 | `JaExC::ProviderError` | The provider fails, times out, or is not available. |
 | `JaExC::InvalidResponseError` | The model output is truncated at the token limit, is not valid JSON, or has the wrong structure. `#content` holds the raw output. |
 | `JaExC::InvalidExerciseError` | An exercise breaks a result rule. `#exercises` holds the rejected exercises. |
+| `JaExC::AnalyzerError` | The reading analyzer command or dictionary is missing, or the command fails. |
 
 JaExC makes one provider attempt for each `generate` call.
 JaExC disables automatic retries. The caller decides if it retries.
@@ -130,12 +166,17 @@ It reads the provider settings from environment variables:
 | `JAEXC_LIVE_MODEL` | Required. |
 | `JAEXC_BASE_URL` | `http://localhost:11434/v1` |
 | `JAEXC_TIMEOUT` | `120` |
+| `JAEXC_SUDACHI_DICT` | Required with `--check-readings`. Path to a Sudachi system dictionary. |
 
 ```bash
 export JAEXC_LIVE_MODEL=<model>
 bin/jaexc-demo --type kanji_reading --target 学 --allowed 学,校,日,本 \
   --level N5 --count 3 --locales en,pl
 ```
+
+Add `--check-readings` to compare the readings with Sudachi.
+The demo prints each difference after the exercises.
+It checks Sudachi before it calls the model.
 
 If generation fails, the demo prints the error class and message and exits with status 1.
 
@@ -152,6 +193,9 @@ The live demo ran on 2026-10-17 with Ollama 0.40.5 on a GPU with 16 GB VRAM.
 ## Limitations
 
 - Structural validation does not prove natural Japanese, correct readings, or correct translations.
+- The reading check is a second opinion, not proof. Sudachi selects one reading from context.
+  Sudachi reads 何を as なんを, so a correct なにを also gets a warning.
+  Sudachi reads 一日 as いちにち, so a correct ついたち also gets a warning.
 - JaExC does not restrict politeness or speech style. Only `allowed_kanji` restricts content.
 - JaExC does not prove JLPT level accuracy. The level only guides the model.
 - JaExC supports only CJK Unified Ideographs (U+4E00 to U+9FFF).
@@ -169,15 +213,21 @@ The live demo ran on 2026-10-17 with Ollama 0.40.5 on a GPU with 16 GB VRAM.
 ```bash
 bin/setup
 bundle exec rake          # Unit tests and RuboCop.
-bundle exec rake mutant   # Mutation tests for request and domain validation.
+bundle exec rake mutant   # Mutation tests for validation and the reading check.
 ```
 
-The default tests use a fake provider. They do not need a model or network access.
+The default tests use a fake provider and a fake `sudachi` command. They do not need a model, Sudachi, or network access.
 
 To run the opt-in live test against a local Ollama model:
 
 ```bash
 JAEXC_LIVE_MODEL=<model> bundle exec ruby -Ilib -Itest test/live/test_live_generation.rb
+```
+
+To run the opt-in live test against Sudachi:
+
+```bash
+JAEXC_SUDACHI_DICT=~/.local/share/sudachi/system_core.dic bundle exec ruby -Ilib -Itest test/live/test_live_sudachi.rb
 ```
 
 ## License
