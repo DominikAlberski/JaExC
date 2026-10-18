@@ -47,6 +47,23 @@ class TestCreator < Minitest::Test
                  result
   end
 
+  def test_result_has_no_warnings_without_analyzer
+    assert_empty @creator.generate(**valid_input).warnings
+  end
+
+  def test_analyzer_reading_mismatch_adds_warning_to_result
+    creator = JaExC::Creator.new(provider: @provider, analyzer: FakeAnalyzer.new("学校です。" => "ガッコウ"))
+    warning = JaExC::ReadingWarning.new(jp: "学校です。", model_reading: "がっこうです。", analyzer_reading: "ガッコウ")
+
+    assert_equal [warning], creator.generate(**valid_input).warnings
+  end
+
+  def test_analyzer_reading_match_adds_no_warning
+    creator = JaExC::Creator.new(provider: @provider, analyzer: FakeAnalyzer.new("学校です。" => "ガッコウデス。"))
+
+    assert_empty creator.generate(**valid_input).warnings
+  end
+
   def test_invalid_output_raises_invalid_response_error
     creator = JaExC::Creator.new(provider: FakeProvider.new(content: "{not json"))
 

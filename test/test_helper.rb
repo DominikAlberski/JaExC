@@ -7,3 +7,4 @@ require "minitest/autorun" unless defined?(Mutant)
 require "mutant/minitest/coverage"
 
 require_relative "support/fake_provider"
+require_relative "support/fake_analyzer"

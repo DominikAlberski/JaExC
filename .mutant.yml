@@ -9,6 +9,7 @@ requires:
   - ./test/test_jaexc.rb
   - ./test/test_kanji.rb
   - ./test/test_prompt_builder.rb
+  - ./test/test_reading_check.rb
   - ./test/test_request.rb
   - ./test/test_request_validator.rb
   - ./test/test_response_parser.rb
@@ -24,3 +25,4 @@ matcher:
     - JaExC::Request*
     - JaExC::RequestValidator*
     - JaExC::ExerciseValidator*
+    - JaExC::ReadingCheck*
