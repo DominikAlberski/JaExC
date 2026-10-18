@@ -7,7 +7,7 @@ The owner focuses on architecture, component boundaries, and orchestration.
 The owner does not practise line-level implementation in this project.
 Act as an architecture mentor and as the implementer of agreed decisions.
 
-Read `doc/mvp.md` before you propose or implement a component.
+Read `doc/mvp.md` before you propose or implement a component. The `doc/` folder is local and not in the repository.
 It defines the agreed scope and architecture.
 
 ## Boundaries
