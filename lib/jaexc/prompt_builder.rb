@@ -13,6 +13,7 @@ module JaExC
         Use only these kanji in each sentence: %<allowed>s.
         Do not put spaces in the Japanese text.
         If a word needs a kanji that is not allowed, write that part in kana, for example お茶 or 友だち.
+        Before you answer, check every kanji in each sentence against the allowed list.
         The reading must match the Japanese text exactly.
         Write all other words in kana. The repetition mark 々 is allowed.
         Give the reading of the full sentence in hiragana. Keep katakana words in katakana.
@@ -27,6 +28,7 @@ module JaExC
         Use only these kanji in each word: %<allowed>s.
         Do not put spaces in the Japanese text.
         If a word needs a kanji that is not allowed, write that part in kana, for example お茶 or 友だち.
+        Before you answer, check every kanji in each word against the allowed list.
         The reading must match the Japanese text exactly.
         A word may also contain hiragana and katakana. The repetition mark 々 is allowed.
         Give the reading of each word in hiragana. Keep katakana in katakana.

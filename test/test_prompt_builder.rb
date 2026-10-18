@@ -145,4 +145,13 @@ class TestPromptBuilder < Minitest::Test
     assert_includes build(exercise_type: :kanji_words).text,
                     "Use the target kanji evenly: each target kanji should appear in about the same number of words."
   end
+
+  def test_reading_text_asks_for_allowed_kanji_check
+    assert_includes build.text, "Before you answer, check every kanji in each sentence against the allowed list."
+  end
+
+  def test_words_text_asks_for_allowed_kanji_check
+    assert_includes build(exercise_type: :kanji_words).text,
+                    "Before you answer, check every kanji in each word against the allowed list."
+  end
 end

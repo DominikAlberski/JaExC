@@ -164,7 +164,7 @@ Test each hypothesis. Do not change code before the cause is known.
 
 ## 4. Prompt tuning
 
-Status: in progress. Candidate 2 accepted on 2026-10-18 (Run 6). Evidence: Runs 4 to 6 in `doc/blog-notes.md`.
+Status: in progress. Accepted: candidate 2 (Run 6), candidate 5 (Run 7). Rejected: candidate 1 (Run 8). Evidence: Runs 4 to 8 in `doc/blog-notes.md`.
 
 ### Goal
 
@@ -187,8 +187,11 @@ Change one prompt line at a time. Measure each change with live runs.
 Verify each candidate with live runs before the owner accepts it.
 
 1. Remove 友だち from the kana fallback example. It possibly makes the model think of 友達.
+   Measured in Run 8: pass rate 1 of 6 (Run 7: 3 of 6). 達 stayed (2 of 6 attempts), 飯 rose to 3 of 6. Rejected and reverted on 2026-10-18.
 2. Done in Run 6: "Use the target kanji evenly: each target kanji should appear in about the same number of sentences."
    Result: target use 2 2 2 2 2 in both passes. Pass rate 2 of 6 (old prompt: 1 of 6).
+5. Measured in Run 7: "Before you answer, check every kanji in each sentence against the allowed list."
+   Result: pass rate 3 of 6. Forbidden kanji did not go down; 達 is the most frequent. Accepted on 2026-10-18.
 3. Add a line: "Write natural sentences that a teacher would use in class."
 4. Add a line: "Use a different sentence pattern in each sentence."
 

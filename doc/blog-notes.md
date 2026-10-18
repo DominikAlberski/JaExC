@@ -469,6 +469,80 @@ Other observations:
   Whether an odd sentence is a bad exercise depends on context. That is a teacher decision, not a rule.
 - The forbidden kanji stay the main rejection cause: 学校, 飯, 達, 誰.
 
+## Run 7 — prompt line for an allowed-kanji check (2026-10-18)
+
+New line in both templates, after the kana fallback line:
+"Before you answer, check every kanji in each sentence against the allowed list." (`word` in `kanji_words`.)
+Thinking is off, so the model cannot really check first. The line is a stronger reminder only.
+
+| Attempt | Time | Result |
+|---|---|---|
+| 1 | 14 s | Rejected: 事, 達, 明 |
+| 2 | 8 s | Pass. 1 reading warning. Targets 2 2 2 2 2. |
+| 3 | 8 s | Rejected: 達, 明, 本, 銀, 学, 校 |
+| 4 | 7 s | Rejected: 達 |
+| 5 | 8 s | Pass. 2 reading warnings. Targets 2 3 2 2 1. |
+| 6 | 7 s | Pass. 3 reading warnings. Targets 2 2 2 3 2. |
+
+| Measure | Run 5 | Run 6 | Run 7 |
+|---|---|---|---|
+| Pass rate | 1 of 6 | 2 of 6 | 3 of 6 |
+| Target declaration errors | 3 of 6 | 1 of 6 | 0 of 6 |
+| Attempts with a forbidden kanji | 3 of 6 | 4 of 6 | 3 of 6 |
+
+The pass rate goes up, but 6 attempts per run is a small sample.
+Forbidden kanji did not go down. 達 is now the most frequent (3 of 6 attempts), from 友達.
+
+Reading check, second true positive on live output (attempt 5):
+
+```text
+- 友と茶を飲みます。: model ともとおちゃをのみます。, analyzer トモトチャヲノミマス。
+```
+
+The model added お to 茶 again (same error as the Run 3 fixture). The other 5 warnings are 何 = ナン false positives.
+
+Weak sentences that pass every check: 友だちと水を見ます, 今、水を見ます, 茶を見ます (見 with any noun),
+毎日はどこへ行きますか (odd は).
+
+## Run 8 — kana fallback example without 友だち (2026-10-18)
+
+Change in both templates: "for example お茶 or 友だち." became "for example お茶."
+Idea: the example 友だち possibly makes the model think of 友達.
+
+| Attempt | Time | Result |
+|---|---|---|
+| 1 | 14 s | Rejected: 飯 |
+| 2 | 8 s | Rejected: 飯 |
+| 3 | 6 s | Rejected: 飯, 達 |
+| 4 | 7 s | Rejected: 達 |
+| 5 | 8 s | Pass. 4 reading warnings, 3 of them real errors. Targets 2 2 2 2 2. |
+| 6 | 7 s | Rejected: 写, 真, 学, 校, 本 |
+
+| Measure | Run 7 | Run 8 |
+|---|---|---|
+| Pass rate | 3 of 6 | 1 of 6 |
+| Attempts with 達 | 3 of 6 | 2 of 6 |
+| Attempts with 飯 | 0 of 6 | 3 of 6 |
+
+The change did not remove 達, and 飯 (ご飯) appeared in half of the attempts.
+Owner decision: rejected. The example is back to "お茶 or 友だち". The kanji-check line from Run 7 is accepted.
+
+Reading check on the passing attempt: 3 real errors in one result, all accepted by the structural rules.
+
+```text
+- 友と茶を飲まします。: model ともとおちゃをのみます。, analyzer トモトチャヲノマシマス。
+- 何を食べますか。: model なにをたべますか。, analyzer ナンヲタベマスカ。
+- 友が来ます。: model ともときます。, analyzer トモガキマス。
+- 人が来ます。: model ひとがきまます。, analyzer ヒトガキマス。
+```
+
+| jp | Error | Found by |
+|---|---|---|
+| 友と茶を飲まします | 飲まします is not a word. The reading says のみます, so jp and reading differ. お is also added to 茶. | Reading check |
+| 友が来ます | The reading drops が and has と: ともときます. | Reading check |
+| 人が来ます | Typo in the reading: きまます. | Reading check |
+| 何を食べますか | None. Sudachi reads 何 as ナン. | False positive |
+
 ## Wrong answers and what we tuned
 
 
