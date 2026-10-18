@@ -543,6 +543,53 @@ Reading check on the passing attempt: 3 real errors in one result, all accepted 
 | 人が来ます | Typo in the reading: きまます. | Reading check |
 | 何を食べますか | None. Sudachi reads 何 as ナン. | False positive |
 
+## Run 9 — corrective generation (2026-10-18)
+
+Owner decision: bring corrective generation back from "deferred".
+Design: `Creator.new(provider:, analyzer:, corrections: 0)`. Only `InvalidExerciseError` starts a correction.
+The correction prompt is: original instructions, the previous answer, the broken rules,
+then "Return the same number of exercises again. Keep the exercises without problems. Fix only the listed problems."
+It is built from the original prompt each time, so prompts do not nest. Every attempt is fully validated again.
+`Result#attempts` records the provider calls.
+
+Same request as Runs 5 to 8, with `--corrections 2` and `--check-readings`.
+
+| Run | Attempts | Time | Result | Targets 食 飲 行 見 来 |
+|---|---|---|---|---|
+| 1 | 2 | 25 s | Pass | 2 2 2 2 2 |
+| 2 | 1 | 8 s | Pass | 1 3 2 2 2 |
+| 3 | 2 | 15 s | Pass | 2 3 1 2 2 |
+| 4 | 3 | 23 s | Pass | 2 2 2 3 2 |
+| 5 | 2 | 14 s | Pass | 2 2 2 2 2 |
+| 6 | 2 | 15 s | Pass | 2 3 2 1 2 |
+
+| Measure | Run 7 (no corrections) | Run 9 (2 corrections) |
+|---|---|---|
+| Successful runs | 3 of 6 | 6 of 6 |
+| Provider calls per run | 1 | 2.0 on average |
+| Time per run | 7 to 14 s | 8 to 25 s |
+
+Reading check, real errors found (all accepted by the structural rules):
+
+| Run | jp | Model reading | Error |
+|---|---|---|---|
+| 1 | 友だちと水を飲みます | ともだち**の**みずを… | の instead of と |
+| 2 | 毎日は人が来る | …ひと**り**がくる | ひとり instead of ひと |
+| 2 | 友が来る | とも**ち**がくる | Invented reading |
+| 2 | 友が行く | ともだちがいく | 友 alone is とも |
+| 2 | 人が行く | ひとが**お。**いく | Garbage in the reading |
+| 3 | 友だちが来ます, 人が来ます | …き**じ**ます | Typo, twice |
+| 5 | 毎日食べます | まいにち**に**たべます | Added に |
+
+False positives: 何 = ナン (9 times) and a new one, 何か = ナンカ (correct: なにか).
+
+Findings:
+
+- Corrections turn a 50 % first-try rate into 6 of 6 successful runs, for about twice the time.
+- Corrections fix rule errors only. Reading errors are warnings, so they do not start a correction.
+  Run 2 passed on the first attempt with 5 real reading errors.
+- One of 6 runs needed both corrections (run 4). No run failed after the second correction.
+
 ## Wrong answers and what we tuned
 
 

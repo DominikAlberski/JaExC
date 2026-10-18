@@ -14,8 +14,8 @@ class TestCLI < Minitest::Test
     @err = StringIO.new
   end
 
-  def run_cli(argv, content: { exercises: [EXERCISE] }.to_json, analyzer: nil)
-    @provider = FakeProvider.new(content: content)
+  def run_cli(argv, content: { exercises: [EXERCISE] }.to_json, analyzer: nil, contents: [content])
+    @provider = FakeProvider.new(contents: contents)
     JaExC::CLI.new(out: @out, err: @err, provider: @provider, analyzer: analyzer).run(argv)
   end
 
@@ -100,6 +100,20 @@ class TestCLI < Minitest::Test
     end
     assert_includes @err.string, "JaExC::AnalyzerError: sudachi dictionary not found: /no/such/system.dic"
     assert_empty @provider.calls
+  end
+
+  def test_corrections_flag_lets_the_model_fix_rejected_exercises
+    forbidden = { exercises: [EXERCISE.merge(jp: "駅の学校です。")] }.to_json
+
+    assert_equal 0, run_cli(ARGV_OK + %w[--corrections 1], contents: [forbidden, { exercises: [EXERCISE] }.to_json])
+    assert_includes @out.string, "fake / fake-model: 2 attempt(s), structurally validated, not teacher-reviewed"
+  end
+
+  def test_without_corrections_flag_rejected_exercises_fail
+    forbidden = { exercises: [EXERCISE.merge(jp: "駅の学校です。")] }.to_json
+
+    assert_equal 1, run_cli(ARGV_OK, contents: [forbidden, { exercises: [EXERCISE] }.to_json])
+    assert_equal 1, @provider.calls.size
   end
 
   def test_unknown_flag_prints_usage_error

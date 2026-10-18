@@ -188,10 +188,15 @@ Expose stable library errors for these failure categories:
 
 Do not expose provider exceptions as the public contract.
 Do not return partial exercises as a successful result.
-The MVP performs one provider attempt per generation request.
+By default, JaExC makes one provider attempt per generation request.
+With `corrections: n`, JaExC can send up to n correction prompts after an `InvalidExerciseError`.
+A correction prompt contains the original instructions, the previous answer, and the broken rules.
+Every attempt is fully validated. If the last attempt fails, JaExC raises its `InvalidExerciseError`.
+JaExC never corrects `InvalidResponseError`, truncated output, or `ProviderError`.
+`Result#attempts` records the number of provider calls.
 Set RubyLLM's `max_retries` to `0` to disable automatic transport retries.
 The adapter sets `max_retries` to `0`. The caller cannot change this value.
-The caller decides whether to retry.
+The caller decides whether to retry after an error.
 
 ### Reading check contract
 
@@ -317,7 +322,7 @@ A real local inference run remains mandatory for MVP demonstration.
 - Curriculum databases, dictionary ingestion, and textbook imports.
 - Exercise types other than `:kanji_reading` and `:kanji_words`, and additional translation locales.
 - Additional backends beyond Ollama through the RubyLLM adapter.
-- Automatic retries, corrective generation, and streaming.
+- Automatic retries and streaming. Corrective generation was moved into scope on 2026-10-18 (see the failure contract).
 - Fine-tuning, retrieval, agent tools, and workflow orchestration.
 - Automatic linguistic certification or guaranteed JLPT classification.
 

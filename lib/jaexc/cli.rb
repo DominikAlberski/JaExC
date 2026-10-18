@@ -50,11 +50,13 @@ module JaExC
       OptionParser.new("Usage: jaexc-demo [options]") do |opts|
         FLAGS.each { |flag, key, type, cast| opts.on(flag, type) { |value| input[key] = cast.call(value) } }
         opts.on("--check-readings", "Compare readings with Sudachi (JAEXC_SUDACHI_DICT)") { @check_readings = true }
+        opts.on("--corrections N", Integer, "Let the model fix rejected exercises N times") { |n| @corrections = n }
       end
     end
 
     def creator
-      Creator.new(provider: @provider || env_provider, analyzer: (@analyzer || env_analyzer if @check_readings))
+      Creator.new(provider: @provider || env_provider, analyzer: (@analyzer || env_analyzer if @check_readings),
+                  corrections: @corrections || 0)
     end
 
     def env_analyzer
@@ -68,7 +70,8 @@ module JaExC
     end
 
     def print_result(result)
-      @out.puts("#{result.provider} / #{result.model}: structurally validated, not teacher-reviewed")
+      @out.puts("#{result.provider} / #{result.model}: #{result.attempts} attempt(s), structurally validated, " \
+                "not teacher-reviewed")
       result.exercises.each.with_index(1) { |exercise, number| print_exercise(exercise, number) }
       print_warnings(result.warnings) if @check_readings
     end

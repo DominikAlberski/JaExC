@@ -152,8 +152,22 @@ Every error is a subclass of `JaExC::Error`.
 | `JaExC::InvalidExerciseError` | An exercise breaks a result rule. `#exercises` holds the rejected exercises. |
 | `JaExC::AnalyzerError` | The reading analyzer command or dictionary is missing, or the command fails. |
 
-JaExC makes one provider attempt for each `generate` call.
-JaExC disables automatic retries. The caller decides if it retries.
+By default, JaExC makes one provider attempt for each `generate` call.
+JaExC disables automatic transport retries. The caller decides if it retries after an error.
+
+### Corrections (optional)
+
+```ruby
+creator = JaExC::Creator.new(provider: provider, corrections: 2)
+result = creator.generate(...)
+result.attempts  # => 1 to 3
+```
+
+- If the exercises break a result rule, JaExC sends a correction prompt: the original instructions,
+  the previous answer, and the broken rules. The model returns all exercises again.
+- JaExC validates every attempt. If the last attempt fails, JaExC raises its `InvalidExerciseError`.
+- JaExC does not correct invalid JSON, truncated output, provider errors, or reading warnings.
+- Each correction is one more model call. In Run 9, 2 corrections gave 6 of 6 successful runs with 2.0 calls on average.
 JaExC never returns a partial result.
 
 ## CLI demo
@@ -173,6 +187,9 @@ export JAEXC_LIVE_MODEL=<model>
 bin/jaexc-demo --type kanji_reading --target 学 --allowed 学,校,日,本 \
   --level N5 --count 3 --locales en,pl
 ```
+
+Add `--corrections N` to let the model fix rejected exercises up to N times.
+The header shows the number of attempts.
 
 Add `--check-readings` to compare the readings with Sudachi.
 The demo prints each difference after the exercises.

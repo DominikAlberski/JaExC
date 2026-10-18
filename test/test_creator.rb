@@ -64,6 +64,62 @@ class TestCreator < Minitest::Test
     assert_empty creator.generate(**valid_input).warnings
   end
 
+  FORBIDDEN = { exercises: [EXERCISE.merge(jp: "駅の学校です。")] }.to_json
+  VALID = { exercises: [EXERCISE] }.to_json
+
+  def correcting_creator(contents, corrections:)
+    @provider = FakeProvider.new(contents: contents)
+    JaExC::Creator.new(provider: @provider, corrections: corrections)
+  end
+
+  def test_first_valid_answer_takes_one_attempt
+    assert_equal 1, @creator.generate(**valid_input).attempts
+  end
+
+  def test_correction_returns_result_of_corrected_answer
+    result = correcting_creator([FORBIDDEN, VALID], corrections: 1).generate(**valid_input)
+
+    assert_equal [JaExC::Exercise.new(**EXERCISE)], result.exercises
+    assert_equal 2, result.attempts
+  end
+
+  def test_correction_sends_correction_prompt_built_from_original_prompt
+    correcting_creator([FORBIDDEN, FORBIDDEN, VALID], corrections: 2).generate(**valid_input)
+    original = JaExC::PromptBuilder.call(JaExC::Request.from(valid_input))
+    correction = JaExC::CorrectionPrompt.call(original, content: FORBIDDEN,
+                                                        errors: ["exercises[0].jp contains forbidden kanji: 駅"])
+
+    assert_equal([original.text, correction.text, correction.text], @provider.calls.map { |call| call[:prompt] })
+  end
+
+  def test_last_error_is_raised_when_corrections_run_out
+    creator = correcting_creator([FORBIDDEN], corrections: 2)
+
+    assert_raises(JaExC::InvalidExerciseError) { creator.generate(**valid_input) }
+    assert_equal 3, @provider.calls.size
+  end
+
+  def test_without_corrections_invalid_exercises_take_one_call
+    creator = correcting_creator([FORBIDDEN, VALID], corrections: 0)
+
+    assert_raises(JaExC::InvalidExerciseError) { creator.generate(**valid_input) }
+    assert_equal 1, @provider.calls.size
+  end
+
+  def test_corrections_default_to_zero
+    @provider = FakeProvider.new(contents: [FORBIDDEN, VALID])
+
+    assert_raises(JaExC::InvalidExerciseError) { JaExC::Creator.new(provider: @provider).generate(**valid_input) }
+    assert_equal 1, @provider.calls.size
+  end
+
+  def test_invalid_response_is_not_corrected
+    creator = correcting_creator(["{not json", VALID], corrections: 2)
+
+    assert_raises(JaExC::InvalidResponseError) { creator.generate(**valid_input) }
+    assert_equal 1, @provider.calls.size
+  end
+
   def test_invalid_output_raises_invalid_response_error
     creator = JaExC::Creator.new(provider: FakeProvider.new(content: "{not json"))
 

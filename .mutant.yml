@@ -3,6 +3,7 @@ usage: opensource
 requires:
   - jaexc
   - ./test/test_cli.rb
+  - ./test/test_correction_prompt.rb
   - ./test/test_creator.rb
   - ./test/test_exercise_validator.rb
   - ./test/test_helper.rb
@@ -27,4 +28,5 @@ matcher:
     - JaExC::RequestValidator*
     - JaExC::ExerciseValidator*
     - JaExC::ReadingCheck*
+    - JaExC::CorrectionPrompt*
     - JaExC::Analyzers::SudachiCli*

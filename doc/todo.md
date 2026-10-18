@@ -206,6 +206,8 @@ Verify each candidate with live runs before the owner accepts it.
 ### Owner decisions (2026-10-18)
 
 - Balanced use of targets is a prompt request only. No validation rule.
+- Corrective generation moved from deferred into scope. Implemented: `corrections:` on `Creator`, `--corrections N` in the CLI.
+  Run 9: 6 of 6 successful runs with 2 corrections, 2.0 provider calls on average.
 - 6 live attempts are enough to accept a prompt change.
 
 ### Done when
