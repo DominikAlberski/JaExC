@@ -195,7 +195,7 @@ The caller decides whether to retry.
 
 ### Reading check contract
 
-Status: implemented on 2026-10-18. The live run with Gemma and Sudachi is open.
+Status: implemented on 2026-10-18. Live run with Gemma and Sudachi: Run 5 in `doc/blog-notes.md`.
 
 The reading check is optional.
 It compares the model `reading` with the reading from a morphological analyzer.

@@ -2,7 +2,7 @@
 
 ## 1. Dictionary reading check (warning)
 
-Status: implemented on 2026-10-18 (library, adapter, CLI flag, README). Open: live run with Gemma and Sudachi.
+Status: done on 2026-10-18. Live run: Run 5 in `doc/blog-notes.md`.
 
 ### Goal
 

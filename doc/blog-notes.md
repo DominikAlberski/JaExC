@@ -376,6 +376,57 @@ Lesson: the analyzer is a second opinion, not the truth.
 何 shows it: Sudachi says ナン where なに is correct, so a correct model reading also gets a warning.
 This is the evidence for "warning, not rejection".
 
+## Run 5 — reading check with Sudachi (2026-10-18)
+
+Same request as Run 4, with `--check-readings`:
+targets 食 飲 行 見 来, allowed 食 飲 行 見 来 茶 水 友 毎 日 人 何 今 朝, N5, 10 sentences, en and pl.
+Gemma 4 26B-A4B QAT, thinking off. Sudachi 0.7.0 with SudachiDict core 20261015.
+Recorded with asciinema 3.2.1 (`--headless`, 120x40). Files (local, git-ignored): `tmp/demo/jaexc-run5-1.cast` to `-6.cast`.
+
+| Attempt | Time | Result |
+|---|---|---|
+| 1 | 16 s | Pass. 2 reading warnings. |
+| 2 | 5 s | Rejected: 学, 校, 飯 |
+| 3 | 7 s | Rejected: 明 |
+| 4 | 8 s | Rejected: target declaration |
+| 5 | 7 s | Rejected: target declaration, 達, 学, 校 |
+| 6 | 7 s | Rejected: target declaration, 飯 |
+
+Attempt 1 output (all 10 readings look correct on manual review):
+
+| # | jp | reading |
+|---|---|---|
+| 1 | 毎朝水を飲みます。 | まいあさみずをのみます。 |
+| 2 | 友だちを食べに来ます。 | ともだちをたべにきます。 |
+| 3 | 今、お茶を見ます。 | いま、おちゃをみます。 |
+| 4 | 何を食べますか。 | なにをたべますか。 |
+| 5 | 毎日行きます。 | まいにちいきます。 |
+| 6 | 人は水を飲みます。 | ひとはみずをのみます。 |
+| 7 | 朝、茶を見ます。 | あさ、ちゃをみます。 |
+| 8 | 今、来ますか。 | いま、きますか。 |
+| 9 | 友だちは何を食べますか。 | ともだちはなにをたべますか。 |
+| 10 | 毎日お茶を飲みます。 | まいにちおちゃをのみます。 |
+
+Reading check output:
+
+```text
+reading check (Sudachi): 2 difference(s); a difference is not proof of an error
+- 何を食べますか。: model なにをたべますか。, analyzer ナンヲタベマスカ。
+- 友だちは何を食べますか。: model ともだちはなにをたべますか。, analyzer トモダチハナンヲタベマスカ。
+```
+
+Findings:
+
+- Both warnings are false positives. The model is correct (なにを). Sudachi reads 何 as ナン.
+- 8 of 8 other readings agree with Sudachi, including お茶 → おちゃ (お is in jp here).
+- No real reading error in this run, so the run does not show a true positive.
+  The true positives are the four fixtures from earlier runs (see the live Sudachi test).
+- Pass rate 1 of 6 is lower than Run 4. Rejections: forbidden kanji (学校 3 times, 飯 2, 明, 達)
+  and target declarations (3 attempts). The prompt tuning item covers this.
+- Sentence 2 (友だちを食べに来ます) means "(someone) comes to eat the friend". The particle を makes the friend the food.
+  The translation "A friend is coming to eat" hides the error. Correct: 友だちが食べに来ます.
+  Sentences 3 and 7 (お茶を見ます) are unnatural again. Neither check can see this.
+
 ## Wrong answers and what we tuned
 
 
