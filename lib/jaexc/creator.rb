@@ -18,8 +18,14 @@ module JaExC
       request = Request.from(input)
       prompt = PromptBuilder.call(request)
       response = @provider.generate(prompt: prompt.text, schema: prompt.schema)
-      exercises = ExerciseValidator.call(ResponseParser.call(response.content, request), request)
-      Result.new(exercises: exercises, provider: response.provider, model: response.model)
+      Result.new(exercises: exercises(response, request), provider: response.provider, model: response.model)
+    end
+
+    private
+
+    def exercises(response, request)
+      parsed = ResponseParser.call(response.content, request, truncated: response.truncated)
+      ExerciseValidator.call(parsed, request)
     end
   end
 end

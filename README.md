@@ -43,7 +43,8 @@ provider = JaExC::Providers::RubyLLM.new(
   provider: :ollama,
   model: "<model>",
   base_url: "http://localhost:11434/v1",
-  timeout: 120
+  timeout: 120,
+  thinking: false
 )
 
 creator = JaExC::Creator.new(provider: provider)
@@ -66,6 +67,11 @@ result.exercises.each do |exercise|
   exercise.target_kanji  # => ["学"]
 end
 ```
+
+`thinking: false` is the default. The adapter sends `reasoning_effort: "none"`.
+With thinking on, Gemma 4 26B-A4B filled the 16384-token context with reasoning in 8 of 10 test calls
+and returned empty or truncated content.
+Set `thinking: true` to keep the model default.
 
 ### Request rules
 
@@ -91,9 +97,11 @@ A result contains exactly `count` exercises.
 JaExC checks each exercise against the actual `jp` text, not against the model declarations:
 
 - Every kanji in `jp` is in `allowed_kanji`. JaExC does not check kana, punctuation, or Latin characters.
+- `jp` contains no whitespace, including the ideographic space U+3000.
 - `jp` contains at least one target kanji.
 - `target_kanji` lists each target kanji in `jp` exactly once.
 - `reading` contains no kanji.
+- `reading` contains only kana, the long vowel mark ー, and punctuation. It contains no whitespace, Latin letters, or digits.
 - Two exercises do not have the same `jp` text.
 - Each requested locale has a nonempty translation.
 
@@ -105,7 +113,7 @@ Every error is a subclass of `JaExC::Error`.
 |---|---|
 | `JaExC::InvalidRequestError` | The request breaks a request rule. JaExC does not call the provider. `#errors` lists every violation. |
 | `JaExC::ProviderError` | The provider fails, times out, or is not available. |
-| `JaExC::InvalidResponseError` | The model output is not valid JSON or has the wrong structure. `#content` holds the raw output. |
+| `JaExC::InvalidResponseError` | The model output is truncated at the token limit, is not valid JSON, or has the wrong structure. `#content` holds the raw output. |
 | `JaExC::InvalidExerciseError` | An exercise breaks a result rule. `#exercises` holds the rejected exercises. |
 
 JaExC makes one provider attempt for each `generate` call.
@@ -135,15 +143,16 @@ If generation fails, the demo prints the error class and message and exits with 
 
 | Item | Value |
 |---|---|
-| Model | TODO: record the exact model name. |
-| Digest | TODO: record the `ollama list` digest. |
-| License | TODO: record the model license. |
+| Model | `gemma4:26b-a4b-it-qat` (Gemma 4 26B-A4B, QAT Q4_0, 15.6 GB) |
+| Digest | `2dd70431afed94dd3688d790443768c1487ed086b57147ff083851116ae4c4e4` |
+| License | Apache 2.0 |
 
-The live demo has not been recorded yet.
+The live demo ran on 2026-10-17 with Ollama 0.40.5 on a GPU with 16 GB VRAM.
 
 ## Limitations
 
 - Structural validation does not prove natural Japanese, correct readings, or correct translations.
+- JaExC does not restrict politeness or speech style. Only `allowed_kanji` restricts content.
 - JaExC does not prove JLPT level accuracy. The level only guides the model.
 - JaExC supports only CJK Unified Ideographs (U+4E00 to U+9FFF).
   This range contains every jōyō kanji.

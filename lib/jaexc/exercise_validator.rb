@@ -1,11 +1,13 @@
 # frozen_string_literal: true
 
 module JaExC
-  # Checks parsed exercises against the kanji, target, reading, and duplicate rules of the request.
+  # Checks parsed exercises against the kanji, whitespace, target, reading, and duplicate rules of the request.
   # It reads kanji from the actual jp text, not from the declared target_kanji.
   class ExerciseValidator
     HAN = /[\p{Han}\p{Ideographic}]/
     ITERATION_MARK = "々"
+    WHITESPACE = /\p{Space}/
+    NOT_KANA = /[^\p{Hiragana}\p{Katakana}ー\p{P}\p{Han}\p{Ideographic}\p{Space}]/
 
     # @param exercises [Array<Exercise>] structurally valid exercises from {ResponseParser}
     # @param request [Request] validated caller input
@@ -35,8 +37,9 @@ module JaExC
 
     def errors_for(exercise, path)
       kanji = exercise.jp.scan(HAN).uniq - [ITERATION_MARK]
-      [*character_errors(kanji, path), *target_errors(exercise.target_kanji, @request.target_kanji & kanji, path),
-       reading_error(exercise.reading, path)]
+      [*character_errors(kanji, path), whitespace_error(exercise.jp, "#{path}.jp"),
+       *target_errors(exercise.target_kanji, @request.target_kanji & kanji, path),
+       *reading_errors(exercise.reading, "#{path}.reading")]
     end
 
     def character_errors(kanji, path)
@@ -45,13 +48,18 @@ module JaExC
        list_error(unsupported, "#{path}.jp contains unsupported characters")]
     end
 
+    def whitespace_error(text, path)
+      "#{path} must not contain whitespace" if text.match?(WHITESPACE)
+    end
+
     def target_errors(declared, present, path)
       [("#{path}.jp contains no target kanji" if present.empty?),
        ("#{path}.target_kanji must list each target kanji in jp exactly once" unless declared.sort == present.sort)]
     end
 
-    def reading_error(reading, path)
-      "#{path}.reading must not contain kanji" if reading.match?(HAN)
+    def reading_errors(reading, path)
+      [("#{path} must not contain kanji" if reading.match?(HAN)), whitespace_error(reading, path),
+       list_error(reading.scan(NOT_KANA).uniq, "#{path} contains characters that are not kana")]
     end
 
     def list_error(chars, prefix)

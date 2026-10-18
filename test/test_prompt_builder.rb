@@ -108,6 +108,30 @@ class TestPromptBuilder < Minitest::Test
     assert_equal build.schema, build(exercise_type: :kanji_words).schema
   end
 
+  def test_reading_text_forbids_spaces
+    assert_includes build.text, "Do not put spaces in the Japanese text."
+  end
+
+  def test_words_text_forbids_spaces
+    assert_includes build(exercise_type: :kanji_words).text, "Do not put spaces in the Japanese text."
+  end
+
+  KANA_FALLBACK = "If a word needs a kanji that is not allowed, write that part in kana, for example お茶 or 友だち."
+  EXACT_READING = "The reading must match the Japanese text exactly."
+
+  def test_reading_text_asks_for_kana_fallback_and_exact_reading
+    [KANA_FALLBACK, EXACT_READING].each { |line| assert_includes build.text, line }
+  end
+
+  def test_words_text_asks_for_kana_fallback_and_exact_reading
+    [KANA_FALLBACK, EXACT_READING].each { |line| assert_includes build(exercise_type: :kanji_words).text, line }
+  end
+
+  def test_reading_text_asks_for_kana_in_all_other_words
+    assert_includes build.text, "Write all other words in kana."
+    refute_includes build.text, "every other word"
+  end
+
   def test_text_permits_repetition_mark
     assert_includes build.text, "々"
   end

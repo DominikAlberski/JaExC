@@ -9,15 +9,18 @@ module JaExC
 
     # @param content [String] raw model output
     # @param request [Request] validated caller input
+    # @param truncated [Boolean] true when the provider stopped the output at the token limit
     # @return [Array<Exercise>]
-    # @raise [InvalidResponseError] when the output is not valid JSON or breaks the expected structure
-    def self.call(content, request)
-      new(content, request).call
+    # @raise [InvalidResponseError] when the output is truncated, is not valid JSON,
+    #   or breaks the expected structure
+    def self.call(content, request, truncated: false)
+      new(content, request, truncated).call
     end
 
-    def initialize(content, request)
+    def initialize(content, request, truncated)
       @content = content
       @request = request
+      @truncated = truncated
     end
 
     def call
@@ -30,6 +33,7 @@ module JaExC
     private
 
     def document_errors
+      return ["content is truncated: the model reached its token limit"] if @truncated
       return ["content is not valid JSON"] unless parse
       return ["root must be an object with only key: exercises"] unless root?
       return ["exercises must be an Array of exactly #{@request.count} items"] unless items?

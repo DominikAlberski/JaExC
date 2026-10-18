@@ -48,6 +48,14 @@ class TestResponseParser < Minitest::Test
     assert_rejected "{not json", "content is not valid JSON"
   end
 
+  def test_rejects_truncated_content
+    errors = assert_raises(JaExC::InvalidResponseError) do
+      JaExC::ResponseParser.call("{\"exercises\": [", request, truncated: true)
+    end.errors
+
+    assert_equal ["content is truncated: the model reached its token limit"], errors
+  end
+
   def test_rejects_fenced_json
     assert_rejected "```json\n#{{ exercises: [item, item] }.to_json}\n```", "content is not valid JSON"
   end

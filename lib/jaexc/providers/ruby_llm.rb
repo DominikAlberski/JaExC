@@ -13,9 +13,11 @@ module JaExC
       # @param model [String] model identifier known to the provider
       # @param base_url [String] provider API base URL
       # @param timeout [Integer] request timeout in seconds
-      def initialize(provider:, model:, base_url:, timeout:)
+      # @param thinking [Boolean] true keeps the model thinking default; false disables thinking
+      def initialize(provider:, model:, base_url:, timeout:, thinking: false)
         @provider = provider
         @model = model
+        @thinking = thinking
         @context = ::RubyLLM.context { |config| configure(config, base_url, timeout) }
       end
 
@@ -24,8 +26,9 @@ module JaExC
       # @return [ProviderResponse]
       # @raise [ProviderError] when the provider call fails or times out
       def generate(prompt:, schema:)
-        content = new_chat.with_schema(schema).ask(prompt).content
-        ProviderResponse.new(content: content, provider: @provider, model: @model)
+        message = new_chat.with_schema(schema).ask(prompt)
+        ProviderResponse.new(content: message.content, provider: @provider, model: @model,
+                             truncated: message.finish_reason == :max_tokens)
       rescue *FAILURES => e
         raise ProviderError, "#{@provider} request failed: #{e.class}"
       end
@@ -33,7 +36,8 @@ module JaExC
       private
 
       def new_chat
-        @context.chat(model: @model, provider: @provider, assume_model_exists: true)
+        chat = @context.chat(model: @model, provider: @provider, assume_model_exists: true)
+        @thinking ? chat : chat.with_thinking(effort: :none)
       end
 
       def configure(config, base_url, timeout)

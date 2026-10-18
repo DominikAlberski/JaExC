@@ -51,6 +51,14 @@ class TestExerciseValidator < Minitest::Test
     assert_equal exercises, validate(*exercises)
   end
 
+  def test_rejects_ascii_whitespace_in_jp
+    assert_rejected exercise(jp: "学 校 です。"), "exercises[1].jp must not contain whitespace"
+  end
+
+  def test_rejects_ideographic_space_in_jp
+    assert_rejected exercise(jp: "学校　です。"), "exercises[1].jp must not contain whitespace"
+  end
+
   def test_requires_a_target_kanji_in_jp
     assert_rejected exercise(jp: "日です。", target_kanji: []), "exercises[1].jp contains no target kanji"
   end
@@ -77,6 +85,25 @@ class TestExerciseValidator < Minitest::Test
 
   def test_rejects_iteration_mark_in_reading
     assert_rejected exercise(reading: "がっこう々"), "exercises[1].reading must not contain kanji"
+  end
+
+  def test_rejects_ascii_whitespace_in_reading
+    assert_rejected exercise(reading: "がっこう です。"), "exercises[1].reading must not contain whitespace"
+  end
+
+  def test_rejects_ideographic_space_in_reading
+    assert_rejected exercise(reading: "がっこう　です。"), "exercises[1].reading must not contain whitespace"
+  end
+
+  def test_rejects_latin_letters_and_digits_in_reading
+    assert_rejected exercise(reading: "がっこうlyly3です。"),
+                    "exercises[1].reading contains characters that are not kana: l, y, 3"
+  end
+
+  def test_permits_katakana_long_vowel_and_punctuation_in_reading
+    exercises = [exercise, exercise(jp: "本です。", target_kanji: ["本"], reading: "「コーヒー・がっこう」ですか？はい、です!")]
+
+    assert_equal exercises, validate(*exercises)
   end
 
   def test_rejects_duplicate_jp

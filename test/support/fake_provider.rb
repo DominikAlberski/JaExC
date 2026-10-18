@@ -4,13 +4,14 @@
 class FakeProvider
   attr_reader :calls
 
-  def initialize(content: "{}")
+  def initialize(content: "{}", truncated: false)
     @content = content
+    @truncated = truncated
     @calls = []
   end
 
   def generate(prompt:, schema:)
     @calls << { prompt:, schema: }
-    JaExC::ProviderResponse.new(content: @content, provider: :fake, model: "fake-model")
+    JaExC::ProviderResponse.new(content: @content, provider: :fake, model: "fake-model", truncated: @truncated)
   end
 end

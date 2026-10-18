@@ -53,6 +53,13 @@ class TestCreator < Minitest::Test
     assert_raises(JaExC::InvalidResponseError) { creator.generate(**valid_input) }
   end
 
+  def test_truncated_output_raises_invalid_response_error
+    creator = JaExC::Creator.new(provider: FakeProvider.new(content: "", truncated: true))
+    error = assert_raises(JaExC::InvalidResponseError) { creator.generate(**valid_input) }
+
+    assert_equal ["content is truncated: the model reached its token limit"], error.errors
+  end
+
   def test_constraint_violation_raises_invalid_exercise_error
     content = { exercises: [EXERCISE.merge(jp: "駅の学校です。")] }.to_json
     creator = JaExC::Creator.new(provider: FakeProvider.new(content: content))

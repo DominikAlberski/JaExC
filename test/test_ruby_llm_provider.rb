@@ -45,6 +45,34 @@ class TestRubyLLMProvider < Minitest::Test
     assert_equal JSON.parse(SCHEMA.to_json), body.dig("response_format", "json_schema", "schema")
   end
 
+  def test_disables_thinking_by_default
+    stub_success
+    generate
+
+    assert_equal "none", sent_bodies.first["reasoning_effort"]
+  end
+
+  def test_thinking_option_keeps_the_model_default
+    provider = JaExC::Providers::RubyLLM.new(provider: :ollama, model: "qwen3:8b",
+                                             base_url: "http://localhost:11434/v1", timeout: 60, thinking: true)
+    stub_success
+    provider.generate(prompt: "hi", schema: SCHEMA)
+
+    refute_includes sent_bodies.first.keys, "reasoning_effort"
+  end
+
+  def test_reports_truncated_output
+    stub_request(:post, URL).to_return(completion("").merge(body: completion("").fetch(:body).sub("stop", "length")))
+
+    assert_predicate generate, :truncated
+  end
+
+  def test_reports_complete_output_as_not_truncated
+    stub_success
+
+    refute_predicate generate, :truncated
+  end
+
   def test_each_call_uses_a_fresh_chat
     stub_success
     generate("first")

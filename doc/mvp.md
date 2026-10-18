@@ -77,6 +77,8 @@ JaExC owns prompts, domain validation, result objects, and stable public errors.
 Use an isolated `RubyLLM.context` for each configured adapter.
 Do not mutate the consuming application's global RubyLLM configuration.
 Set the provider, endpoint, timeout, retry policy, and logging policy explicitly.
+Disable model thinking by default. Thinking can fill the context before the model writes the JSON.
+The caller can enable thinking with `thinking: true`.
 Create a fresh chat for each generation request.
 Never share conversation history between requests.
 
@@ -98,7 +100,8 @@ provider = JaExC::Providers::RubyLLM.new(
   provider: :ollama,
   model: "<selected-open-weight-model>",
   base_url: "http://localhost:11434/v1",
-  timeout: 60
+  timeout: 60,
+  thinking: false
 )
 
 creator = JaExC::Creator.new(provider: provider)
@@ -163,6 +166,9 @@ Reject undeclared or incorrectly declared targets and forbidden kanji.
 Detect kanji in `jp` with the Unicode `Han` and `Ideographic` properties.
 Reject a detected character outside the supported kanji range, except the iteration mark 々.
 Reject every `Han` or `Ideographic` character in `reading`, including 々.
+Reject whitespace in `jp`, including the ideographic space U+3000.
+Accept only kana, the long vowel mark ー, and punctuation in `reading`. Reject whitespace, Latin letters, and digits.
+Do not restrict politeness or speech style. Only the allowed-kanji list restricts content.
 Do not pad missing exercises with fabricated content.
 
 Include the provider and model identifiers in result metadata.
@@ -176,7 +182,7 @@ Expose stable library errors for these failure categories:
 
 - Invalid request.
 - Provider connection failure or timeout.
-- Invalid response JSON or structure.
+- Invalid response JSON or structure, including output truncated at the token limit.
 - Exercise constraint violation.
 
 Do not expose provider exceptions as the public contract.
@@ -254,8 +260,8 @@ Use a fake provider for deterministic tests.
 Test prompt construction without contacting a model.
 Test the public interface with success and failure responses.
 
-Cover malformed JSON, missing fields, empty translations, and incorrect exercise counts.
-Cover forbidden kanji, missing targets, false target declarations, duplicates, and Unicode boundaries.
+Cover truncated output, malformed JSON, missing fields, empty translations, and incorrect exercise counts.
+Cover forbidden kanji, missing targets, false target declarations, duplicates, whitespace, reading characters, and Unicode boundaries.
 Cover timeouts and connection failures.
 Prove invalid input makes no provider call.
 Test the thin RubyLLM adapter separately from domain logic.
