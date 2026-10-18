@@ -411,3 +411,5 @@ Plain form and です/ます form are both correct when the sentence is natural.
 
 - Teacher feedback (first user): would they use it, would they pay, what do they ask for next.
 - Public repository link.
+- Terminal recording of the demo with asciinema 3.2.1 (Rust rewrite, pinned in `mise.toml`).
+  Run it from the project directory so the mise shims resolve.
