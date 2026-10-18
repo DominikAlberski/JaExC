@@ -427,6 +427,48 @@ Findings:
   The translation "A friend is coming to eat" hides the error. Correct: 友だちが食べに来ます.
   Sentences 3 and 7 (お茶を見ます) are unnatural again. Neither check can see this.
 
+## Run 6 — prompt line for even target use (2026-10-18)
+
+Owner decisions: balanced target use is a prompt request only, not a validation rule.
+A prompt change is measured with 6 live attempts of the Run 5 request.
+
+New line in both templates, after the "at least one target kanji" line:
+"Use the target kanji evenly: each target kanji should appear in about the same number of sentences."
+(`words` in the `kanji_words` template.)
+"Each target kanji in at least one sentence" was rejected: it is impossible when count is smaller than the target count.
+
+| Attempt | Time | Result |
+|---|---|---|
+| 1 | 15 s | Rejected: target declaration, 誰 |
+| 2 | 7 s | Rejected: 学, 校 |
+| 3 | 7 s | Rejected: 飯 (twice) |
+| 4 | 5 s | Rejected: 達 (twice) |
+| 5 | 6 s | Pass. 3 reading warnings. |
+| 6 | 7 s | Pass. 1 reading warning. |
+
+| Measure | Run 4 / Run 5 (old prompt) | Run 6 (new line) |
+|---|---|---|
+| Pass rate | 1 of 6 (Run 5) | 2 of 6 |
+| Target use in a passing result (食 飲 行 見 来) | 2 2 3 2 1 (Run 4) | 2 2 2 2 2, both passes |
+
+The pass rate difference is small for 6 attempts. The target balance is the clear effect.
+
+First true positive of the reading check on live output (attempt 5):
+
+```text
+- 友が来ます。: model ともだちがきます。, analyzer トモガキマス。
+```
+
+The model read 友 alone as ともだち. Correct: ともがきます. Structural rules accept it.
+The other 3 warnings in Run 6 are 何 = ナン false positives.
+
+Other observations:
+
+- 水を食べますか ("do you eat water?") passes every check. It is grammatical but semantically odd,
+  unless the listener is an alien visiting Earth (owner's comment).
+  Whether an odd sentence is a bad exercise depends on context. That is a teacher decision, not a rule.
+- The forbidden kanji stay the main rejection cause: 学校, 飯, 達, 誰.
+
 ## Wrong answers and what we tuned
 
 

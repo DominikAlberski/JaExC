@@ -9,6 +9,7 @@ module JaExC
         Write exactly %<count>s Japanese sentences for JLPT %<level>s kanji-reading practice.
         All sentences must be different.
         Each sentence must contain at least one target kanji: %<targets>s.
+        Use the target kanji evenly: each target kanji should appear in about the same number of sentences.
         Use only these kanji in each sentence: %<allowed>s.
         Do not put spaces in the Japanese text.
         If a word needs a kanji that is not allowed, write that part in kana, for example お茶 or 友だち.
@@ -22,6 +23,7 @@ module JaExC
         Write exactly %<count>s Japanese words for JLPT %<level>s kanji-reading practice.
         All words must be different real dictionary words.
         Each word must contain at least one target kanji: %<targets>s.
+        Use the target kanji evenly: each target kanji should appear in about the same number of words.
         Use only these kanji in each word: %<allowed>s.
         Do not put spaces in the Japanese text.
         If a word needs a kanji that is not allowed, write that part in kana, for example お茶 or 友だち.

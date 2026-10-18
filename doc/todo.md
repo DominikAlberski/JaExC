@@ -164,7 +164,7 @@ Test each hypothesis. Do not change code before the cause is known.
 
 ## 4. Prompt tuning
 
-Status: open. Evidence from Run 4 in `doc/blog-notes.md`.
+Status: in progress. Candidate 2 accepted on 2026-10-18 (Run 6). Evidence: Runs 4 to 6 in `doc/blog-notes.md`.
 
 ### Goal
 
@@ -179,28 +179,31 @@ Change one prompt line at a time. Measure each change with live runs.
 | Target kanji are not balanced. | 行 3, 飲 2, 食 2, 見 2, 来 1 in 10 sentences. |
 | Some sentences are unnatural. | 水を見ます, 茶を見ます. |
 | Some sentences repeat a pattern. | 何を食べますか twice, with a different time word. |
+| Forbidden kanji are the main rejection cause. | 学校 4 times, 飯 3, 達 2, 明 1, 誰 1 in 12 attempts (Runs 5 and 6). |
+| Target declarations are wrong. | 4 of 12 attempts (Runs 5 and 6). |
 
 ### Candidate prompt changes
 
 Verify each candidate with live runs before the owner accepts it.
 
 1. Remove 友だち from the kana fallback example. It possibly makes the model think of 友達.
-2. Add a line: "Use each target kanji in at least one sentence."
+2. Done in Run 6: "Use the target kanji evenly: each target kanji should appear in about the same number of sentences."
+   Result: target use 2 2 2 2 2 in both passes. Pass rate 2 of 6 (old prompt: 1 of 6).
 3. Add a line: "Write natural sentences that a teacher would use in class."
 4. Add a line: "Use a different sentence pattern in each sentence."
 
 ### Method
 
-- Use the same fixed request for each measurement. Use the Run 4 request.
-- Do at least 5 attempts for each prompt version.
+- Use the same fixed request for each measurement. Use the Run 4 request (Run 5 adds `--check-readings`).
+- Do 6 attempts for each prompt version (owner decision, 2026-10-18).
 - Record the pass rate, the rejection reasons, and the time per call.
 - Keep linguistic judgment separate from the pass rate.
 - Add a prompt builder test for each accepted line.
 
-### Open questions for the owner
+### Owner decisions (2026-10-18)
 
-1. Is a balanced use of targets a prompt request only, or also a validation rule?
-2. How many attempts are enough to accept a prompt change?
+- Balanced use of targets is a prompt request only. No validation rule.
+- 6 live attempts are enough to accept a prompt change.
 
 ### Done when
 

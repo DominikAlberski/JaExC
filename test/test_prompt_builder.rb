@@ -135,4 +135,14 @@ class TestPromptBuilder < Minitest::Test
   def test_text_permits_repetition_mark
     assert_includes build.text, "々"
   end
+
+  def test_reading_text_asks_for_even_target_use
+    assert_includes build.text, "Use the target kanji evenly: each target kanji should appear in about the same " \
+                                "number of sentences."
+  end
+
+  def test_words_text_asks_for_even_target_use
+    assert_includes build(exercise_type: :kanji_words).text,
+                    "Use the target kanji evenly: each target kanji should appear in about the same number of words."
+  end
 end
