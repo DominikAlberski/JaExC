@@ -53,4 +53,7 @@ module JaExC
 
   # Raised when the model provider fails, times out, or cannot be reached.
   class ProviderError < Error; end
+
+  # Raised when the reading analyzer is missing, cannot start, or fails.
+  class AnalyzerError < Error; end
 end

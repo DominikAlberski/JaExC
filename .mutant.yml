@@ -13,6 +13,7 @@ requires:
   - ./test/test_request.rb
   - ./test/test_request_validator.rb
   - ./test/test_response_parser.rb
+  - ./test/test_sudachi_cli.rb
   - ./test/test_ruby_llm_provider.rb
 includes:
   - lib
@@ -26,3 +27,4 @@ matcher:
     - JaExC::RequestValidator*
     - JaExC::ExerciseValidator*
     - JaExC::ReadingCheck*
+    - JaExC::Analyzers::SudachiCli*

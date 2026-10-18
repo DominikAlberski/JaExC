@@ -1,0 +1,24 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+TOKENS = {
+  "茶" => [%w[茶 チャ]],
+  "茶を飲みます" => [%w[茶 チャ], %w[を ヲ], %w[飲み ノミ], %w[ます マス]],
+  "茶 茶" => [%w[茶 チャ], [" ", "キゴウ"], %w[茶 チャ]],
+  "㷔を見る" => [%w[㷔 㷔], %w[を ヲ], %w[見る ミル]]
+}.freeze
+
+dictionary = ARGV[ARGV.index("-l") + 1]
+abort "\nFailed to create dictionary: #{dictionary}" if File.empty?(dictionary)
+
+def row(surface, reading)
+  columns = [surface, "名詞,普通名詞,一般,*,*,*", surface]
+  columns += [surface, reading, "0", "[]"] if ARGV.include?("-a")
+  "#{columns.join("\t")}\t"
+end
+
+$stdin.each_line(chomp: true) do |line|
+  abort "\npanicked at #{line}" if line == "壊"
+  TOKENS.fetch(line, []).each { |surface, reading| puts row(surface, reading) }
+  puts "EOS"
+end

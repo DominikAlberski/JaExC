@@ -362,6 +362,15 @@ Probe of the reading field (`-a`, column 5, katakana):
 | 一日 | イチニチ | ついたち is also correct |
 | 「はい」と言った。 | 「ハイ」トイッタ。 | Punctuation stays; remove before comparison |
 | 㷔を見る | 㷔ヲミル | Unknown kanji: the reading is the kanji itself |
+| 茶 茶 | チャ**キゴウ**チャ | A space is a token with the reading キゴウ (記号, "symbol") |
+
+Without `-a`, the CLI writes only 3 columns and no reading.
+
+Mutant on the Sudachi adapter (first version: 18 alive mutations of 1187):
+
+- The fake CLI ignored `-a`. Removing the flag passed every test. The fake now writes 3 columns without `-a`, like the real CLI.
+- The `EOS` filter was dead code. `EOS` has no column 5, so it adds nothing to the reading.
+- Splitting on any whitespace passed every test. The real space token (キゴウ) became the test for tab-only splitting.
 
 Lesson: the analyzer is a second opinion, not the truth.
 何 shows it: Sudachi says ナン where なに is correct, so a correct model reading also gets a warning.
