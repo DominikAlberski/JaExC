@@ -25,7 +25,7 @@ Requirements:
 Add the gem from git:
 
 ```ruby
-gem "jaexc", git: "https://github.com/<owner>/jaexc"
+gem "jaexc", git: "https://github.com/DominikAlberski/JaExC"
 ```
 
 Pull a model on the Ollama server:
