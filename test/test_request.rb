@@ -22,6 +22,18 @@ class TestRequest < Minitest::Test
     assert_equal valid_input, request.to_h
   end
 
+  def test_from_puts_target_kanji_first_in_allowed_kanji_without_duplicates
+    request = JaExC::Request.from(valid_input.merge(target_kanji: %w[学 校], allowed_kanji: %w[日 校]))
+
+    assert_equal %w[学 校 日], request.allowed_kanji
+  end
+
+  def test_from_allows_only_target_kanji_without_allowed_kanji
+    request = JaExC::Request.from(valid_input.except(:allowed_kanji))
+
+    assert_equal ["学"], request.allowed_kanji
+  end
+
   def test_from_rejects_invalid_input
     assert_raises(JaExC::InvalidRequestError) { JaExC::Request.from(valid_input.merge(count: 0)) }
   end

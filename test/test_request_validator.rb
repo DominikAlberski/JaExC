@@ -127,27 +127,33 @@ class TestRequestValidator < Minitest::Test
     assert_rejected input, 'target_kanji contains unsupported kanji: "あ", "学校"'
   end
 
+  def test_accepts_input_without_allowed_kanji
+    input = valid_input.except(:allowed_kanji)
+
+    assert_equal input, JaExC::RequestValidator.call(input)
+  end
+
+  def test_accepts_empty_allowed_kanji
+    input = valid_input.merge(allowed_kanji: [])
+
+    assert_equal input, JaExC::RequestValidator.call(input)
+  end
+
+  def test_accepts_allowed_kanji_without_targets
+    input = valid_input.merge(target_kanji: %w[学 校], allowed_kanji: %w[日])
+
+    assert_equal input, JaExC::RequestValidator.call(input)
+  end
+
   def test_rejects_invalid_allowed_kanji_list
-    message = "allowed_kanji must be a nonempty unique Array"
-    [[], %w[学 学], "学", nil].each do |kanji|
+    message = "allowed_kanji must be a unique Array"
+    [%w[学 学], "学", nil].each do |kanji|
       assert_rejected valid_input.merge(allowed_kanji: kanji), message
     end
   end
 
   def test_rejects_unsupported_allowed_kanji
     assert_rejected valid_input.merge(allowed_kanji: %w[学 々]), 'allowed_kanji contains unsupported kanji: "々"'
-  end
-
-  def test_rejects_allowed_kanji_without_every_target
-    input = valid_input.merge(target_kanji: %w[学 校], allowed_kanji: %w[学 日])
-
-    assert_rejected input, 'allowed_kanji must include every target_kanji, missing: "校"'
-  end
-
-  def test_skips_target_inclusion_check_when_target_list_is_invalid
-    errors = errors_for(valid_input.merge(target_kanji: "学"))
-
-    assert_equal ["target_kanji must be a nonempty unique Array"], errors
   end
 
   def test_collects_every_violation

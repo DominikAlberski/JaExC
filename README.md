@@ -61,7 +61,7 @@ creator = JaExC::Creator.new(provider: provider)
 result = creator.generate(
   exercise_type: :kanji_reading,
   target_kanji: ["学"],
-  allowed_kanji: ["学", "校", "日", "本"],
+  allowed_kanji: ["校", "日", "本"],
   level: :N5,
   count: 5,
   translation_locales: [:en, :pl]
@@ -110,7 +110,7 @@ end
 
 ### Request rules
 
-Every field is required.
+Every field except `allowed_kanji` is required.
 JaExC rejects missing keys and unknown keys.
 JaExC does not convert types. For example, JaExC rejects `"N5"` and accepts `:N5`.
 
@@ -118,13 +118,15 @@ JaExC does not convert types. For example, JaExC rejects `"N5"` and accepts `:N5
 |---|---|
 | `exercise_type` | `:kanji_reading` or `:kanji_words`. |
 | `target_kanji` | Nonempty unique Array of supported kanji. |
-| `allowed_kanji` | Nonempty unique Array of supported kanji. It must contain every target kanji. |
+| `allowed_kanji` | Optional unique Array of supported kanji, allowed besides the target kanji. Default: `[]`. |
 | `level` | `:N5`, `:N4`, `:N3`, `:N2`, or `:N1`. |
 | `count` | Integer from 1 to 10. |
 | `translation_locales` | Nonempty unique Array of `:en` and `:pl`. |
 
 The caller supplies `allowed_kanji` from its curriculum.
-To get words from the target kanji only, give the same list as `target_kanji` and `allowed_kanji`.
+JaExC adds the target kanji to the allowed set, so the caller does not repeat them.
+A kanji in both lists is accepted, and the allowed set contains it once.
+To get words from the target kanji only, omit `allowed_kanji`.
 
 ### Result rules
 
@@ -184,7 +186,7 @@ It reads the provider settings from environment variables:
 
 ```bash
 export JAEXC_LIVE_MODEL=<model>
-bin/jaexc-demo --type kanji_reading --target 学 --allowed 学,校,日,本 \
+bin/jaexc-demo --type kanji_reading --target 学 --allowed 校,日,本 \
   --level N5 --count 3 --locales en,pl
 ```
 

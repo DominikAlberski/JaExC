@@ -16,6 +16,7 @@ module JaExC
       count: :count_error,
       translation_locales: :translation_locales_error
     }.freeze
+    OPTIONAL_KEYS = %i[allowed_kanji].freeze
 
     # @param input [Hash{Symbol => Object}] raw caller input
     # @return [Hash{Symbol => Object}] the same input when it is valid
@@ -38,7 +39,7 @@ module JaExC
     private
 
     def key_errors
-      missing = CHECKS.keys - @input.keys
+      missing = CHECKS.keys - OPTIONAL_KEYS - @input.keys
       unknown = @input.keys - CHECKS.keys
       errors = []
       errors << "missing keys: #{list(missing)}" if missing.any?
@@ -57,26 +58,20 @@ module JaExC
     end
 
     def target_kanji_error
-      kanji_list_error(:target_kanji)
+      return "target_kanji must be a nonempty unique Array" unless unique_nonempty_array?(@input.fetch(:target_kanji))
+
+      unsupported_kanji_error(:target_kanji)
     end
 
     def allowed_kanji_error
-      kanji_list_error(:allowed_kanji) || missing_targets_error
+      return "allowed_kanji must be a unique Array" unless unique_array?(@input.fetch(:allowed_kanji))
+
+      unsupported_kanji_error(:allowed_kanji)
     end
 
-    def kanji_list_error(key)
-      value = @input[key]
-      return "#{key} must be a nonempty unique Array" unless unique_nonempty_array?(value)
-
-      unsupported = value.reject { |char| Kanji.supported?(char) }
+    def unsupported_kanji_error(key)
+      unsupported = @input.fetch(key).reject { |char| Kanji.supported?(char) }
       "#{key} contains unsupported kanji: #{list(unsupported)}" if unsupported.any?
-    end
-
-    def missing_targets_error
-      return if target_kanji_error
-
-      missing = @input.fetch(:target_kanji) - @input.fetch(:allowed_kanji)
-      "allowed_kanji must include every target_kanji, missing: #{list(missing)}" if missing.any?
     end
 
     def level_error
@@ -98,7 +93,11 @@ module JaExC
     end
 
     def unique_nonempty_array?(value)
-      value.is_a?(Array) && value.any? && value.uniq == value
+      unique_array?(value) && value.any?
+    end
+
+    def unique_array?(value)
+      value.is_a?(Array) && value.uniq == value
     end
 
     def list(values)
